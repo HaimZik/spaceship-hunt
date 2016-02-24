@@ -1,4 +1,4 @@
-package com.spaceshipStudent
+package com.spaceshiptHunt.entities
 {
 	import nape.geom.Vec2;
 	import starling.display.DisplayObject;
@@ -21,18 +21,18 @@ package com.spaceshipStudent
 			weaponsPlacement["fireCannon"] = Vec2.get(16, -37);
 		}
 		
-		override public function init(assetsLoader:AssetManager, bodyDescription:Object, bodyDisplay:DisplayObject):void
+		override public function init(bodyDescription:Object, bodyDisplay:DisplayObject):void
 		{
-			super.init(assetsLoader, bodyDescription, bodyDisplay);
+			super.init(bodyDescription, bodyDisplay);
 			for (var i:int = 0; i < body.shapes.length; i++)
 			{
 				body.shapes.at(i).filter.collisionMask = ~4;
 			}
 		}
 		
-		override public function updateLogic():void
+		override public function update():void
 		{
-			super.updateLogic();
+			super.update();
 			if (leftImpulse.length != 0)
 			{
 				var enginePositionL:Vec2 = engineLocation.copy(true).rotate(body.rotation).addeq(body.position);

@@ -1,5 +1,6 @@
-package com.spaceshipStudent
+package com.spaceshiptHunt.level
 {
+	import com.spaceshiptHunt.level.Environment;
 	import DDLS.data.DDLSObject;
 	import flash.geom.Point;
 	import nape.geom.GeomPoly;
@@ -27,7 +28,7 @@ package com.spaceshipStudent
 		import flash.filesystem.File;
 		import flash.filesystem.FileMode;
 		import flash.filesystem.FileStream;
-		import com.spaceshipStudent.Level;
+		import com.spaceshiptHunt.level.Level;
 	}
 	
 	/**
@@ -414,7 +415,7 @@ package com.spaceshipStudent
 			lastObstacleIndex = obstacle.length - 1;
 			currentPoly = obstacle[lastObstacleIndex];
 			mainDisplay.addChild(obstacleDisplay[lastObstacleIndex]);
-			obstacleBody[lastObstacleIndex].space = this.physicsSpace;
+			obstacleBody[lastObstacleIndex].space = physicsSpace;
 		}
 	
 	}

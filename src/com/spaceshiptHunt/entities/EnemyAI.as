@@ -1,13 +1,13 @@
-package com.spaceshipStudent
+package com.spaceshiptHunt.entities
 {
-	import com.spaceshipStudent.Environment;
+	import com.spaceshiptHunt.entities.BodyInfo;
+	import com.spaceshiptHunt.level.Environment;
 	import nape.dynamics.InteractionFilter;
 	import nape.geom.Ray;
 	import nape.geom.RayResult;
 	import nape.geom.RayResultList;
 	import nape.geom.Vec2;
 	import starling.display.DisplayObject;
-	import starling.utils.AssetManager;
 	import starling.utils.deg2rad;
 	
 	/**
@@ -19,9 +19,11 @@ package com.spaceshipStudent
 		public var path:Vector.<Number>;
 		public var nextPoint:int = 0;
 		protected var player:Player;
+		public var canViewPlayer:Boolean = true;
 		protected var rayPool:Ray;
 		protected var rayList:RayResultList;
 		protected static var rayFilter:InteractionFilter = new InteractionFilter(2, -1);
+		private var timeSinceUpdate:int;
 		
 		public function EnemyAI(position:Vec2, player:Player)
 		{
@@ -32,18 +34,18 @@ package com.spaceshipStudent
 			rayList = new RayResultList();
 		}
 		
-		override public function init(assetsLoader:AssetManager, bodyDescription:Object, bodyDisplay:DisplayObject):void
+		override public function init(bodyDescription:Object, bodyDisplay:DisplayObject):void
 		{
-			super.init(assetsLoader, bodyDescription, bodyDisplay);
+			super.init(bodyDescription, bodyDisplay);
 			for (var i:int = 0; i < body.shapes.length; i++)
 			{
 				body.shapes.at(i).filter.collisionMask = ~2;
 			}
 		}
 		
-		override public function updatePhysics():void
+		override protected function updateGraphics():void
 		{
-			super.updatePhysics();
+			super.updateGraphics();
 			followPath();
 		}
 		
@@ -112,39 +114,52 @@ package com.spaceshipStudent
 			}
 		}
 		
-		public function checkPlayerVisibility():void
+		private function isPlayerVisible():Boolean
 		{
 			rayPool.origin = this.body.position;
 			rayPool.direction.setxy(player.body.position.x - rayPool.origin.x, player.body.position.y - rayPool.origin.y);
 			rayPool.maxDistance = Vec2.distance(this.body.position, player.body.position);
-			if (rayPool.maxDistance < 1300)
+			if (rayPool.maxDistance > 1300)
 			{
-				EnemyAI.rayFilter.collisionGroup = 2; //Filter player
-				var rayResult:RayResult = body.space.rayCast(rayPool, false, EnemyAI.rayFilter);
-				if (rayResult.shape.body == player.body)
+				return false;
+			}
+			EnemyAI.rayFilter.collisionGroup = 2; //Filter player
+			var rayResult:RayResult = body.space.rayCast(rayPool, false, EnemyAI.rayFilter);
+			if (rayResult.shape.body == player.body)
+			{
+				rayResult.dispose();
+				return true;
+			}
+			rayResult.dispose();
+			return false;
+		}
+		
+		public override function update():void
+		{
+			super.update();
+			timeSinceUpdate++;
+			if (timeSinceUpdate % 61 == 0)
+			{
+				canViewPlayer = isPlayerVisible();
+			}
+			if (timeSinceUpdate > 30 && nextPoint > 0 && pathIsBlocked())
+			{
+				needsMeshUpdate = true;
+				timeSinceUpdate = 0;
+				Environment.pathfinder.findPath(path[path.length - 2], path.pop(), path);
+				if (path.length > 0)
 				{
-					rayResult.dispose();
-					_canViewPlayer = true;
+					nextPoint = 1;
 				}
 				else
 				{
-					rayResult.dispose();
-					_canViewPlayer = false;
+					nextPoint = 0;
 				}
 			}
-			else
-			{
-				_canViewPlayer = false;
-			}
-		}
-		
-		public override function updateLogic():void
-		{
-			super.updateLogic();
 			if (canViewPlayer)
 			{
 				var distance:Number = Vec2.distance(body.position, player.body.position);
-				if (distance < entityAI.radius + entityAI.radius + 20)
+				if (distance < pathfindingAgent.radius + pathfindingAgent.radius + 20)
 				{
 					body.applyImpulse(body.position.sub(player.body.position, true).muleq(22000 / (distance * distance)).rotate(Math.PI / 4));
 				}
@@ -162,9 +177,9 @@ package com.spaceshipStudent
 		
 		public function hide(angle:Number = 0):void
 		{
-			rayPool.origin.x = player.entityAI.x;
-			rayPool.origin.y = player.entityAI.y;
-			rayPool.direction.setxy(entityAI.x - rayPool.origin.x, entityAI.y - rayPool.origin.y);
+			rayPool.origin.x = player.pathfindingAgent.x;
+			rayPool.origin.y = player.pathfindingAgent.y;
+			rayPool.direction.setxy(pathfindingAgent.x - rayPool.origin.x, pathfindingAgent.y - rayPool.origin.y);
 			if (angle != 0)
 			{
 				rayPool.direction.rotate(angle);
@@ -182,9 +197,9 @@ package com.spaceshipStudent
 				if (rayList.length != 0)
 				{
 					rayExit = rayList.shift();
-					if (rayExit.distance - rayEnter.distance > this.entityAI.radius)
+					if (rayExit.distance - rayEnter.distance > this.pathfindingAgent.radius)
 					{
-						hidingSpot = rayPool.at(rayEnter.distance + this.entityAI.radius + 10);
+						hidingSpot = rayPool.at(rayEnter.distance + this.pathfindingAgent.radius + 10);
 						findPath(hidingSpot.x, hidingSpot.y);
 						hidingSpot.dispose();
 					}
@@ -192,7 +207,7 @@ package com.spaceshipStudent
 				}
 				else
 				{
-					hidingSpot = rayPool.at(rayEnter.distance + this.entityAI.radius + 10);
+					hidingSpot = rayPool.at(rayEnter.distance + this.pathfindingAgent.radius + 10);
 					findPath(hidingSpot.x, hidingSpot.y);
 					hidingSpot.dispose();
 				}
@@ -219,18 +234,18 @@ package com.spaceshipStudent
 		
 		public function findPath(x:Number, y:Number):void
 		{
-			Environment.pathfinder.entity = entityAI;
-			if (Environment.timeSinceUpdate > 240)
+			Environment.pathfinder.entity = pathfindingAgent;
+			if (timeSinceUpdate > 240)
 			{
 				Environment.pathfinder.mesh.updateObjects();
-				Environment.timeSinceUpdate = 0;
+				timeSinceUpdate = 0;
 				Environment.pathfinder.findPath(x, y, path);
 			}
 			else
 			{
 				Environment.pathfinder.findPath(x, y, path);
 				nextPoint = 1;
-				if (Environment.timeSinceUpdate > 30 && path.length > 0 && pathIsBlocked())
+				if (timeSinceUpdate > 30 && path.length > 0 && pathIsBlocked())
 				{
 					Environment.pathfinder.mesh.updateObjects();
 					Environment.pathfinder.findPath(x, y, path);
@@ -266,16 +281,20 @@ package com.spaceshipStudent
 			var entitiesNum:int = BodyInfo.list.length;
 			for (var i:int = 0; i < entitiesNum; i++)
 			{
-				if (BodyInfo.list[i].entityAI.approximateObject.hasChanged && BodyInfo.list[i] != this && !(!canViewPlayer && BodyInfo.list[i] is Player))
+				if (BodyInfo.list[i] is Entity)
 				{
-					startToCircle.setxy(BodyInfo.list[i].entityAI.x + BodyInfo.list[i].body.velocity.x - startPoint.x, BodyInfo.list[i].entityAI.y + BodyInfo.list[i].body.velocity.y - startPoint.y);
-					startDotNormal = Math.abs(startToCircle.dot(lineLeftNormal));
-					lineDotCircle = startToCircle.dot(line);
-					if (startDotNormal - entityAI.radius < BodyInfo.list[i].entityAI.radius && lineDotCircle > 0 && lineDotCircle < length)
+					var entity:Entity = BodyInfo.list[i] as Entity;
+					if (entity.pathfindingAgent.approximateObject.hasChanged && entity != this && !(!canViewPlayer && entity is Player))
 					{
-						lineLeftNormal.dispose();
-						startToCircle.dispose();
-						return true;
+						startToCircle.setxy(entity.pathfindingAgent.x + entity.body.velocity.x - startPoint.x, entity.pathfindingAgent.y + entity.body.velocity.y - startPoint.y);
+						startDotNormal = Math.abs(startToCircle.dot(lineLeftNormal));
+						lineDotCircle = startToCircle.dot(line);
+						if (startDotNormal - pathfindingAgent.radius < entity.pathfindingAgent.radius && lineDotCircle > 0 && lineDotCircle < length)
+						{
+							lineLeftNormal.dispose();
+							startToCircle.dispose();
+							return true;
+						}
 					}
 				}
 			}
@@ -287,7 +306,7 @@ package com.spaceshipStudent
 		public function pathIsBlocked():Boolean
 		{
 			var length:int = path.length / 2 - nextPoint;
-			var lineStart:Vec2 = Vec2.get(entityAI.x, entityAI.y);
+			var lineStart:Vec2 = Vec2.get(pathfindingAgent.x, pathfindingAgent.y);
 			lineStart.addeq(body.velocity);
 			var lineEnd:Vec2 = Vec2.get(path[nextPoint * 2], path[nextPoint * 2 + 1]);
 			var i:int = 0;

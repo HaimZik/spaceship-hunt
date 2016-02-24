@@ -1,8 +1,11 @@
-package com.spaceshipStudent
+package com.spaceshiptHunt.entities
 {
+	import com.spaceshiptHunt.level.Environment;
 	import de.flintfabrik.starling.display.FFParticleSystem.Particle;
 	import flash.utils.Dictionary;
 	import nape.geom.Vec2;
+	import starling.animation.IAnimatable;
+	import starling.core.Starling;
 	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
 	import starling.display.Image;
@@ -13,16 +16,18 @@ package com.spaceshipStudent
 	 * ...
 	 * @author Haim Shnitzer
 	 */
-	public class Spaceship extends BodyInfo
+	public class Spaceship extends Entity
 	{
 		public var maxAcceleration:Number;
 		public var maxTurningAcceleration:Number;
 		public var engineLocation:Vec2;
-		protected var _canViewPlayer:Boolean = true;
 		protected var _gunType:String;
+		protected var fireType:String = "fireball";
 		protected var weaponsPlacement:Dictionary;
-		private var weaponLeft:Image;
-		private var weaponRight:Image;
+		protected var weaponRight:Image;
+		protected var weaponLeft:Image;
+		protected var firingRate:Number =0.1;
+		private var shootingCall:IAnimatable;
 		
 		public function Spaceship(position:Vec2)
 		{
@@ -30,47 +35,79 @@ package com.spaceshipStudent
 			weaponsPlacement = new Dictionary(true);
 		}
 		
-		override public function init(assetsLoader:AssetManager, bodyDescription:Object, bodyDisplay:DisplayObject):void
+		override public function init(bodyDescription:Object, bodyDisplay:DisplayObject):void
 		{
-			super.init(assetsLoader, bodyDescription, bodyDisplay);
+			super.init(bodyDescription, bodyDisplay);
 			engineLocation = Vec2.get(bodyDescription.engineLocation.x, bodyDescription.engineLocation.y);
 			maxAcceleration = body.mass * 8;
 			maxTurningAcceleration = body.mass * 5;
 		}
 		
-		public function get canViewPlayer():Boolean
-		{
-			return _canViewPlayer;
-		}
-		
 		public function set gunType(gunType:String):void
 		{
 			_gunType = gunType;
-			var texture:Texture = assetsLoader.getTexture(gunType);
-			if (weaponLeft)
+			var texture:Texture = Environment.assetsLoader.getTexture(gunType);
+			if (weaponRight)
 			{
-				weaponLeft.texture = texture;
-				weaponLeft.readjustSize();
 				weaponRight.texture = texture;
 				weaponRight.readjustSize();
+				weaponLeft.texture = texture;
+				weaponLeft.readjustSize();
 			}
 			else
 			{
-				weaponLeft = new Image(texture);
 				weaponRight = new Image(texture);
-				(graphics as DisplayObjectContainer).addChildAt(weaponLeft, 0);
+				weaponLeft = new Image(texture);
 				(graphics as DisplayObjectContainer).addChildAt(weaponRight, 0);
+				(graphics as DisplayObjectContainer).addChildAt(weaponLeft, 0);
 			}
 			var position:Vec2 = weaponsPlacement[gunType];
-			weaponLeft.x = position.x;
-			weaponLeft.y = position.y;
-			weaponRight.x = -position.x - weaponRight.width;
+			weaponRight.x = position.x;
 			weaponRight.y = position.y;
+			weaponLeft.x = -position.x - weaponLeft.width;
+			weaponLeft.y = position.y;
 		}
 		
 		public function get gunType():String
 		{
 			return _gunType;
+		}
+		
+		public function startShooting():void
+		{
+			if (!shootingCall)
+			{
+				shootingCall = Starling.juggler.repeatCall(shootParticle, firingRate);
+				shootParticle();
+			}else if (!Starling.juggler.contains(shootingCall))
+			{
+				Starling.juggler.add(shootingCall);
+				shootParticle();
+			}
+		}
+		
+		public function stopShooting():void
+		{
+			Starling.juggler.remove(shootingCall);
+		}
+		
+		override public function update():void
+		{
+			super.update();
+		}
+		
+		protected function shootParticle():void
+		{
+			var position:Vec2 = Vec2.get(weaponRight.x+weaponLeft.width/2,weaponRight.y-5);
+			var impulse:Vec2 = Vec2.get(0, 200+Math.random()*200);
+			impulse.angle = body.rotation - Math.PI / 2+Math.random() * 0.1 + 0.05;
+			PhysicsParticle.spawn(fireType, position.copy(true).rotate(body.rotation).addeq(body.position), impulse);
+			position.x = weaponLeft.x + weaponLeft.width / 2;
+			impulse.angle = body.rotation - Math.PI / 2 + Math.random() * 0.1 - 0.05;
+			PhysicsParticle.spawn(fireType, position.rotate(body.rotation).addeq(body.position), impulse);
+			body.applyImpulse(impulse.mul( -0.3));
+			position.dispose();
+			impulse.dispose();
 		}
 		
 		public function jetParticlePositioning(particles:Vector.<Particle>, numActive:int):void
