@@ -4,4 +4,4 @@ The goal of the game is to hunt the opponent spaceship before the time will went
 Movment:
 pc-WASD or controller left joystick. 
 mobile-virtual joystick
-attack-enter key or pressing the screen.
+attack-Enter key or pressing the screen.
