@@ -9,18 +9,18 @@
 		
 		public static function init(s:Stage):void
 		{
-			s.addEventListener(KeyboardEvent.KEY_DOWN, okd);
-			s.addEventListener(KeyboardEvent.KEY_UP, oku);
+			s.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			s.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 			keys = new Vector.<Boolean>(130);
 		}
 		
-		private static function okd(e:KeyboardEvent):void
+		private static function onKeyDown(e:KeyboardEvent):void
 		{
 			if (e.keyCode < 130)
 				keys[e.keyCode] = true;
 		}
 		
-		private static function oku(e:KeyboardEvent):void
+		private static function onKeyUp(e:KeyboardEvent):void
 		{
 			if (e.keyCode < 130)
 				keys[e.keyCode] = false;
@@ -29,36 +29,6 @@
 		static public function isDown(n:int):Boolean
 		{
 			return keys[n];
-		}
-		
-		public static function get dIsDown():Boolean
-		{
-			return keys[68];
-		}
-		
-		public static function get lIsDown():Boolean
-		{
-			return keys[76];
-		}
-		
-		public static function get pIsDown():Boolean
-		{
-			return keys[80];
-		}
-		
-		public static function get aIsDown():Boolean
-		{
-			return keys[65];
-		}
-		
-		public static function get sIsDown():Boolean
-		{
-			return keys[83];
-		}
-		
-		public static function get wIsDown():Boolean
-		{
-			return keys[87];
 		}
 	}
 }

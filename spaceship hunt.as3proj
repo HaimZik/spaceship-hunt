@@ -8,11 +8,11 @@
     <movie fps="60" />
     <movie width="1500" />
     <movie height="980" />
-    <movie version="19" />
+    <movie version="20" />
     <movie minorVersion="0" />
     <movie platform="AIR" />
     <movie background="#000000" />
-    <movie preferredSDK="Flex 4.6.0, AIR 19.0;4.6.0, 19.0;" />
+    <movie preferredSDK="AIR 20.0.0;20.0.0;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -39,7 +39,7 @@
     <option useNetwork="True" />
     <option useResourceBundleMetadata="True" />
     <option warnings="True" />
-    <option verboseStackTraces="False" />
+    <option verboseStackTraces="True" />
     <option linkReport="" />
     <option loadExterns="" />
     <option staticLinkRSL="True" />
@@ -91,7 +91,7 @@
   </options>
   <!-- Plugin storage -->
   <storage>
-    <entry key="at_enabled"><![CDATA[1]]></entry>
+    <entry key="at_enabled"><![CDATA[0]]></entry>
     <entry key="at_password"><![CDATA[]]></entry>
   </storage>
 </project>

@@ -11,7 +11,7 @@ cd %~dp0 & cd ..
 
 :: Your certificate information
 set CERT_NAME="spaceShipStudent"
-set CERT_PASS=timetoplay99
+set CERT_PASS=timetoSpaceHunt
 set CERT_FILE="cert\spaceShipStudent.p12"
 set SIGNING_OPTIONS=-storetype pkcs12 -keystore %CERT_FILE% -storepass %CERT_PASS%
 

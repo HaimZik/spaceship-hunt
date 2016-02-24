@@ -1,4 +1,4 @@
-package com.spaceshipStudent 
+package com.spaceshiptHunt.level 
 {
 	/**
 	 * ...

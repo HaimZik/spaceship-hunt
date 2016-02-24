@@ -1,5 +1,5 @@
-ï»¿<?xml version="1.0" encoding="utf-8"?>
-<application xmlns="http://ns.adobe.com/air/application/19.0">
+<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="http://ns.adobe.com/air/application/20.0">
   <id>air.spaceshipHuntDev</id>
   <versionNumber>0.21</versionNumber>
   <supportedProfiles>extendedDesktop mobileDevice</supportedProfiles>
@@ -7,7 +7,7 @@
   <name>
     <text xml:lang="en">Spaceship Hunt Dev</text>
   </name>
-  <copyright>â€â€Â© 2015 by Haim Shnitzer.All rights reserved.</copyright>
+  <copyright>şı© 2016 by Haim Shnitzer.All rights reserved.</copyright>
   <android>
     <manifestAdditions><![CDATA[<manifest android:installLocation="auto">
 	<uses-sdk android:minSdkVersion="8" />

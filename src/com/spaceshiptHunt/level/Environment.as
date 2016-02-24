@@ -1,24 +1,29 @@
-package com.spaceshipStudent
+package com.spaceshiptHunt.level
 {
 	/**
 	 * ...
 	 * @author Haim Shnitzer
 	 */
 	
-	import com.spaceshipStudent.BodyInfo;
-	import com.spaceshipStudent.EnemyAI;
-	import com.spaceshipStudent.Player;
-	import com.spaceshipStudent.Spaceship;
+	import com.spaceshiptHunt.entities.BodyInfo;
+	import com.spaceshiptHunt.entities.Entity;
+	import com.spaceshiptHunt.entities.PhysicsParticle;
+	import com.spaceshiptHunt.entities.Player;
+	import com.spaceshiptHunt.entities.Spaceship;
 	import DDLS.ai.DDLSPathFinder;
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSObject;
 	import DDLS.factories.DDLSRectMeshFactory;
 	import de.flintfabrik.starling.display.FFParticleSystem;
 	import de.flintfabrik.starling.display.FFParticleSystem.SystemOptions;
+	import nape.callbacks.CbEvent;
+	import nape.callbacks.CbType;
+	import nape.callbacks.InteractionCallback;
+	import nape.callbacks.InteractionListener;
+	import nape.callbacks.InteractionType;
 	import nape.geom.Vec2;
 	import nape.geom.Vec2List;
 	import nape.phys.Body;
-	import nape.phys.BodyList;
 	import nape.phys.BodyType;
 	import nape.shape.Polygon;
 	import nape.space.Space;
@@ -30,14 +35,12 @@ package com.spaceshipStudent
 	
 	public class Environment
 	{
-		public var assetsLoader:AssetManager;
-		public var navMesh:DDLSMesh;
-		public var physicsSpace:Space;
+		public static var assetsLoader:AssetManager;
+		public static var navMesh:DDLSMesh;
+		public static var physicsSpace:Space;
 		public static var pathfinder:DDLSPathFinder;
-		public static var timeSinceUpdate:int;
 		protected var onFinishLoading:Vector.<Function>;
 		protected var navBody:DDLSObject;
-		protected var _enemy:EnemyAI;
 		private var _player:Player;
 		private var ParticleSysOptions:SystemOptions;
 		[Embed(source = "JetFire.pex", mimeType = "application/octet-stream")]
@@ -56,16 +59,8 @@ package com.spaceshipStudent
 			pathfinder = new DDLSPathFinder();
 			pathfinder.mesh = navMesh;
 			FFParticleSystem.init(1024, false, 512, 4);
-		}
-		
-		public function set enemy(value:EnemyAI):void
-		{
-			_enemy = value;
-		}
-		
-		public function get enemy():EnemyAI
-		{
-			return _enemy;
+			var bulletCollisionListener:InteractionListener = new InteractionListener(CbEvent.BEGIN, InteractionType.COLLISION, CbType.ANY_BODY, PhysicsParticle.INTERACTION_TYPE, onBulletHit);
+			physicsSpace.listeners.add(bulletCollisionListener);
 		}
 		
 		public function set player(value:Player):void
@@ -73,43 +68,24 @@ package com.spaceshipStudent
 			_player = value;
 		}
 		
-		public function updatePhysics():void
+		public function updatePhysics(passedTime:Number):void
 		{
-			timeSinceUpdate++;
-			physicsSpace.step(1 / 60);
-			var bodies:BodyList = physicsSpace.liveBodies;
-			for (var i:int = 0; i < bodies.length; i++)
+			physicsSpace.step(passedTime);
+			var length:int = BodyInfo.list.length;
+			var meshNeedsUpdate:Boolean = false;
+			for (var j:int = 0; j < length; j++)
 			{
-				var body:Body = bodies.at(i);
-				var bodyInfo:BodyInfo = body.userData.info as BodyInfo;
-				bodyInfo.updatePhysics();
-				if (bodyInfo is EnemyAI)
+				var bodyInfo:BodyInfo = BodyInfo.list[j];
+				bodyInfo.update();
+				if (bodyInfo.needsMeshUpdate)
 				{
-					var enemy:EnemyAI = bodyInfo as EnemyAI;
-					if (timeSinceUpdate > 30 && enemy.nextPoint > 0 && enemy.pathIsBlocked())
-					{
-						navMesh.updateObjects();
-						timeSinceUpdate = 0;
-						pathfinder.findPath(enemy.path[enemy.path.length - 2], enemy.path.pop(), enemy.path);
-						if (enemy.path.length > 0)
-						{
-							enemy.nextPoint = 1;
-						}
-						else
-						{
-							enemy.nextPoint = 0;
-						}
-					}
+					meshNeedsUpdate = bodyInfo.needsMeshUpdate;
+					bodyInfo.needsMeshUpdate = false;
 				}
 			}
-			if (timeSinceUpdate % 61 == 0)
+			if (meshNeedsUpdate)
 			{
-				_enemy.checkPlayerVisibility();
-			}
-			var length:int = BodyInfo.list.length;
-			for (var j:int = 0; j < length; j++) 
-			{
-				BodyInfo.list[j].updateLogic();
+				navMesh.updateObjects();
 			}
 		}
 		
@@ -145,15 +121,15 @@ package com.spaceshipStudent
 						{
 							addMesh(polygonArray[i], body);
 						}
-						var bodyInfo:BodyInfo = (body.userData.info as BodyInfo);
-						bodyInfo.init(assetsLoader,bodyDescription, bodyDisplay);
+						var bodyInfo:Entity = (body.userData.info as Entity);
+						bodyInfo.init(bodyDescription, bodyDisplay);
 						if (bodyDescription.hasOwnProperty("engineLocation"))
 						{
 							var spcaeship:Spaceship = bodyInfo as Spaceship;
 							addFireParticle(spcaeship);
 							if (spcaeship == _player)
 							{
-							  navMesh.insertObject(spcaeship.entityAI.approximateObject);
+								navMesh.insertObject(spcaeship.pathfindingAgent.approximateObject);
 							}
 						}
 					}
@@ -173,37 +149,6 @@ package com.spaceshipStudent
 					assetsLoader.removeObject(infoFileName);
 				})
 			});
-		}
-		
-		public function loadLevel(onFinish:Function):void
-		{
-			assetsLoader.loadQueue(function onProgress(ratio:Number):void
-			{
-				if (ratio == 1.0)
-				{
-					var length:int = onFinishLoading.length;
-					for (var i:int = 0; i < length; i++)
-					{
-						(onFinishLoading.shift())();
-					}
-					onFinish();
-					navMesh.updateObjects();
-				}
-			})
-		}
-		
-		protected function addFireParticle(bodyInfo:Spaceship):void
-		{
-			if (!ParticleSysOptions)
-			{
-				ParticleSysOptions = SystemOptions.fromXML(XML(new JetFire()), assetsLoader.getTexture("fireball"));
-			}
-			var ps:FFParticleSystem = new FFParticleSystem(ParticleSysOptions);
-			ps.customFunction = bodyInfo.jetParticlePositioning;
-			(bodyInfo.graphics as DisplayObjectContainer).addChild(ps);
-			ps.start();
-			ps.x = bodyInfo.engineLocation.x;
-			ps.y = -bodyInfo.engineLocation.y;
 		}
 		
 		protected function addMesh(points:Array, body:Body, canvas:DisplayObject = null):void
@@ -241,7 +186,49 @@ package com.spaceshipStudent
 			vec2List.clear();
 			vec2List = null;
 		}
+		
+		public function loadLevel(onFinish:Function):void
+		{
+			assetsLoader.loadQueue(function onProgress(ratio:Number):void
+			{
+				if (ratio == 1.0)
+				{
+					var length:int = onFinishLoading.length;
+					for (var i:int = 0; i < length; i++)
+					{
+						(onFinishLoading.shift())();
+					}
+					onFinish();
+					navMesh.updateObjects();
+				}
+			})
+		}
+		
+		protected function addFireParticle(bodyInfo:Spaceship):void
+		{
+			if (!ParticleSysOptions)
+			{
+				ParticleSysOptions = SystemOptions.fromXML(XML(new JetFire()), assetsLoader.getTexture("fireball"));
+			}
+			var ps:FFParticleSystem = new FFParticleSystem(ParticleSysOptions);
+			ps.customFunction = bodyInfo.jetParticlePositioning;
+			(bodyInfo.graphics as DisplayObjectContainer).addChild(ps);
+			ps.start();
+			ps.x = bodyInfo.engineLocation.x;
+			ps.y = -bodyInfo.engineLocation.y;
+		}
+		
+		private function onBulletHit(event:InteractionCallback):void
+		{
+			if (event.int1.userData.info is PhysicsParticle)
+			{
+				(event.int1.userData.info as PhysicsParticle).dispose();
+			}
+			if (event.int2.userData.info is PhysicsParticle)
+			{
+				(event.int2.userData.info as PhysicsParticle).dispose();
+			}
+		}
 	
 	}
-
 }

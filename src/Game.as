@@ -1,25 +1,30 @@
 package
 {
 	import com.input.Key;
-	import com.spaceshipStudent.EnemyAI;
-	import com.spaceshipStudent.Level;
-	import com.spaceshipStudent.Environment;
-	import com.spaceshipStudent.Player;
+	import com.spaceshiptHunt.entities.EnemyAI;
+	import com.spaceshiptHunt.entities.PhysicsParticle;
+	import com.spaceshiptHunt.level.Level;
+	import com.spaceshiptHunt.level.Environment;
+	import com.spaceshiptHunt.entities.Player;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
+	import flash.ui.Keyboard;
 	import io.arkeus.ouya.controller.Xbox360Controller;
 	import io.arkeus.ouya.ControllerInput;
 	import nape.geom.Vec2;
 	import nape.phys.Body;
 	import nape.phys.BodyType;
+	import starling.animation.Juggler;
 	import starling.core.Starling;
 	import starling.display.Canvas;
 	import starling.display.Image;
 	import starling.display.QuadBatch;
 	import starling.display.Sprite;
+	import starling.events.EnterFrameEvent;
 	import starling.events.Event;
+	import starling.events.KeyboardEvent;
 	import starling.events.ResizeEvent;
 	import starling.events.Touch;
 	import starling.events.TouchEvent;
@@ -29,7 +34,7 @@ package
 	import starling.utils.Color;
 	CONFIG::debug
 	{
-		import com.spaceshipStudent.EnvironmentBuilder;
+		import com.spaceshiptHunt.level.EnvironmentBuilder;
 		import nape.util.ShapeDebug;
 		import nape.geom.Mat23;
 		import DDLS.view.DDLSSimpleView;
@@ -41,7 +46,6 @@ package
 	 */
 	public class Game extends Sprite
 	{
-		
 		private var player:Player;
 		private var mousePosition:Point;
 		private var joystickRadios:Number;
@@ -55,6 +59,7 @@ package
 		private var backgroundMusic:SoundChannel;
 		private var pointPool:Point = new Point();
 		private var touches:Vector.<Touch> = new Vector.<Touch>();
+		private var enemy:EnemyAI;
 		CONFIG::release
 		{
 			private var obstacleMask:Canvas;
@@ -100,27 +105,27 @@ package
 			Starling.current.start();
 			Starling.current.stop();
 			player = new Player(new Vec2(5200, 4720));
-			gameEnvironment.enemy = new EnemyAI(new Vec2(4900, 4700), player);
 			gameEnvironment.player = this.player;
 			gameEnvironment.enqueueBody("player", player.body, addChild(new Sprite()));
-			gameEnvironment.enqueueBody("batship", gameEnvironment.enemy.body, addChild(new Sprite()));
+			enemy = new EnemyAI(new Vec2(4900, 4700), player);
+			gameEnvironment.enqueueBody("batship", enemy.body, addChild(new Sprite()));
 			gameEnvironment.enqueueBody("level1", new Body(BodyType.STATIC), obstacleMask);
 			gameEnvironment.loadLevel(onFinishLoadingInfo);
 		}
 		
 		private function onFinishLoadingInfo():void
 		{
-			gameEnvironment.assetsLoader.enqueue("grp/textureAtlases.xml");
-			gameEnvironment.assetsLoader.enqueue("grp/textureAtlases.png");
-			gameEnvironment.assetsLoader.enqueueWithName("grp/stars.png", "stars", new TextureOptions(1.0, false, "bgra", true));
-			gameEnvironment.assetsLoader.enqueueWithName("grp/concrete_baked.png", "concrete", new TextureOptions(1.0, false, "bgra", true));
+			Environment.assetsLoader.enqueue("grp/textureAtlases.xml");
+			Environment.assetsLoader.enqueue("grp/textureAtlases.png");
+			Environment.assetsLoader.enqueueWithName("grp/stars.png", "stars", new TextureOptions(1.0, false, "bgra", true));
+			Environment.assetsLoader.enqueueWithName("grp/concrete_baked.png", "concrete", new TextureOptions(1.0, false, "bgra", true));
 			gameEnvironment.loadLevel(onFinishLoading);
 		}
 		
 		private function onFinishLoading():void
 		{
-			background = new Image(gameEnvironment.assetsLoader.getTexture("stars"));
-			obstacleTexture = new Image(gameEnvironment.assetsLoader.getTexture("concrete"));
+			background = new Image(Environment.assetsLoader.getTexture("stars"));
+			obstacleTexture = new Image(Environment.assetsLoader.getTexture("concrete"));
 			addChildAt(background, 0);
 			addChildAt(obstacleTexture, 1);
 			backgroundRatio = Math.ceil(Math.sqrt(stage.stageHeight * stage.stageHeight + stage.stageWidth * stage.stageWidth) / 512) * 2;
@@ -134,18 +139,27 @@ package
 			Starling.current.start();
 			Key.init(Starling.current.nativeStage);
 			ControllerInput.initialize(Starling.current.nativeStage);
+			addEventListener(KeyboardEvent.KEY_UP, keyUp);
 			addEventListener(Event.ENTER_FRAME, enterFrame);
 			addEventListener(TouchEvent.TOUCH, onTouch);
 			Starling.current.stage.addEventListener(Event.RESIZE, stage_resize);
-			gameEnvironment.assetsLoader.enqueueWithName("audio/Nihilore.mp3", "music");
-			gameEnvironment.assetsLoader.loadQueue(function onProgress(ratio:Number):void
+			Environment.assetsLoader.enqueueWithName("audio/Nihilore.mp3", "music");
+			Environment.assetsLoader.loadQueue(function onProgress(ratio:Number):void
 			{
 				if (ratio == 1.0)
 				{
-					backgroundMusic = gameEnvironment.assetsLoader.getSound("music").play(0, 7);
+					backgroundMusic = Environment.assetsLoader.getSound("music").play(0, 7);
 					backgroundMusic.soundTransform = new SoundTransform(0.4);
 				}
 			})
+			//	PhysicsParticle.fill.cache();
+		}
+		
+		private function keyUp(e:KeyboardEvent,keyCode:int):void 
+		{
+			if (keyCode == Keyboard.ENTER) {
+			player.stopShooting();	
+			}
 		}
 		
 		private function drawJoystick():void
@@ -196,9 +210,20 @@ package
 				if (touches[0].phase == TouchPhase.ENDED)
 				{
 					mousePosition.setTo(stage.stageWidth, 0);
+					player.stopShooting();
 				}
 				else
 				{
+					CONFIG::release
+					{
+						CONFIG::desktop
+						{
+							if (touches[0].phase == TouchPhase.BEGAN)
+							{
+								player.startShooting();
+							}
+						}
+					}
 					touches[0].getLocation(this.parent, mousePosition);
 					mousePosition.offset(-joystickPosition.x, -joystickPosition.y);
 				}
@@ -230,15 +255,19 @@ package
 //-----------------------------------------------------------------------------------------------------------------------------------------
 		//in loop functions
 		
-		private function enterFrame():void
+		private function enterFrame(event:EnterFrameEvent):void
 		{
-			gameEnvironment.updatePhysics();
-			handleKeyboardInput();
-			handleJoystickInput();
+			//Starling.current.juggler.advanceTime(event.passedTime);
+			gameEnvironment.updatePhysics(event.passedTime);
+			CONFIG::desktop
+			{
+				handleKeyboardInput();
+			}
 			moveCam();
+			handleJoystickInput();
 			CONFIG::debug
 			{
-				//displayDebug();
+			displayDebug();
 			}
 		}
 		
@@ -252,9 +281,7 @@ package
 			this.localToGlobal(pointPool, pointPool);
 			this.x -= pointPool.x - v.x - stage.stageWidth / 2;
 			this.y -= pointPool.y - v.y - stage.stageHeight * 0.7;
-			
 			v.dispose();
-			handleJoystickInput();
 			background.x = player.body.position.x - player.body.position.x % 512 - background.width / 2;
 			background.y = player.body.position.y - player.body.position.y % 512 - background.height / 2;
 			obstacleTexture.x = player.body.position.x - player.body.position.x % 1024 - obstacleTexture.width / 2;
@@ -275,14 +302,14 @@ package
 		CONFIG::debug private function displayDebug():void
 		{
 			//napeDebug.clear();
-			//napeDebug.draw(levelManger.physicsSpace);
+			//napeDebug.draw(Environment.physicsSpace);
 			//napeDebug.flush();
 			//napeDebug.transform = Mat23.fromMatrix(this.transformationMatrix);
-			nevMeshView.drawEntity(gameEnvironment.enemy.entityAI, true);
-			nevMeshView.drawEntity(player.entityAI, false);
-			//nevMeshView.drawPath(batship.path);
-			nevMeshView.drawMesh(gameEnvironment.navMesh);
-			nevMeshView.surface.transform.matrix = this.transformationMatrix;
+			//nevMeshView.drawEntity(enemy.pathfindingAgent, true);
+			//nevMeshView.drawEntity(player.pathfindingAgent, false);
+			//nevMeshView.drawPath(enemy.path);
+			//nevMeshView.drawMesh(Environment.navMesh);
+			//nevMeshView.surface.transform.matrix = this.transformationMatrix;
 		}
 		
 		private function handleKeyboardInput():void
@@ -291,7 +318,7 @@ package
 			{
 				CONFIG::air
 				{
-					if (Key.lIsDown)
+					if (Key.isDown(Keyboard.L))
 					{
 						lisDown = true;
 					}
@@ -303,40 +330,44 @@ package
 					}
 				}
 			}
-			if (Key.wIsDown)
+			if (Key.isDown(Keyboard.ENTER))
+			{
+				player.startShooting();
+			}
+			if (Key.isDown(Keyboard.W))
 			{
 				player.leftImpulse.y = player.rightImpulse.y = -player.maxAcceleration;
-				if (Key.aIsDown)
+				if (Key.isDown(Keyboard.A))
 				{
 					player.leftImpulse.y -= player.maxAcceleration;
 					player.rightImpulse.y += player.maxTurningAcceleration / 3;
 				}
-				else if (Key.dIsDown)
+				else if (Key.isDown(Keyboard.D))
 				{
 					player.leftImpulse.y += player.maxTurningAcceleration / 3;
 					player.rightImpulse.y -= player.maxAcceleration;
 				}
 			}
-			else if (Key.sIsDown)
+			else if (Key.isDown(Keyboard.S))
 			{
 				player.leftImpulse.y = player.rightImpulse.y = player.maxAcceleration;
-				if (Key.aIsDown)
+				if (Key.isDown(Keyboard.A))
 				{
 					player.leftImpulse.y -= player.maxAcceleration;
 					player.rightImpulse.y += player.maxTurningAcceleration / 3;
 				}
-				else if (Key.dIsDown)
+				else if (Key.isDown(Keyboard.D))
 				{
 					player.leftImpulse.y += player.maxTurningAcceleration / 3;
 					player.rightImpulse.y -= player.maxAcceleration;
 				}
 			}
-			else if (Key.aIsDown)
+			else if (Key.isDown(Keyboard.A))
 			{
 				player.leftImpulse.y -= player.maxAcceleration;
 				player.rightImpulse.y += player.maxTurningAcceleration;
 			}
-			else if (Key.dIsDown)
+			else if (Key.isDown(Keyboard.D))
 			{
 				player.leftImpulse.y += player.maxTurningAcceleration;
 				player.rightImpulse.y -= player.maxAcceleration;
@@ -359,6 +390,7 @@ package
 				joystick.transformQuad(1, joystickTranslation);
 				player.leftImpulse.y = player.maxTurningAcceleration * mousePosition.x / 160 + player.maxAcceleration * mousePosition.y / 160;
 				player.rightImpulse.y = -player.maxTurningAcceleration * mousePosition.x / 160 + player.maxAcceleration * mousePosition.y / 160;
+				player.stopShooting();
 			}
 			else
 			{
@@ -376,17 +408,25 @@ package
 						xboxController = null;
 					}
 				}
-				if (xboxController && xboxController.leftStick.distance > 0.1)
+				if (xboxController)
 				{
-					player.leftImpulse.y = xboxController.leftStick.x * player.maxTurningAcceleration * 1.2 - player.maxAcceleration * xboxController.leftStick.y;
-					player.rightImpulse.y = -xboxController.leftStick.x * player.maxTurningAcceleration * 1.2 - player.maxAcceleration * xboxController.leftStick.y;
-				}
-				else
-				{
-					if (ControllerInput.hasReadyController())
+					if (xboxController.leftStick.distance > 0.1)
 					{
-						xboxController = ControllerInput.getReadyController() as Xbox360Controller;
+						player.leftImpulse.y = xboxController.leftStick.x * player.maxTurningAcceleration * 1.2 - player.maxAcceleration * xboxController.leftStick.y;
+						player.rightImpulse.y = -xboxController.leftStick.x * player.maxTurningAcceleration * 1.2 - player.maxAcceleration * xboxController.leftStick.y;
 					}
+					if (xboxController.rt.held)
+					{
+						player.startShooting();
+					}
+					else if (xboxController.rt.released)
+					{
+						player.stopShooting();
+					}
+				}
+				else if (ControllerInput.hasReadyController())
+				{
+					xboxController = ControllerInput.getReadyController() as Xbox360Controller;
 				}
 			}
 		}
