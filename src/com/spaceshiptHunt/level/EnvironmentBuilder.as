@@ -19,6 +19,7 @@ package com.spaceshiptHunt.level
 	import starling.events.TouchEvent;
 	import starling.events.TouchPhase;
 	import starling.geom.Polygon;
+	import starling.rendering.VertexData;
 	import starling.utils.Color;
 	CONFIG::air
 	{
@@ -58,7 +59,7 @@ package com.spaceshiptHunt.level
 			mainDisplay.parent.addChild(verticesDisplay);
 		}
 		
-		 CONFIG::air public static function imageToMesh(image:BitmapData):Vector.<Vector.<int>>
+		CONFIG::air public static function imageToMesh(image:BitmapData):Vector.<Vector.<int>>
 		{
 			var body:Body = new Body();
 			var imageIso:BitmapDataIso = new BitmapDataIso(image);
@@ -158,6 +159,16 @@ package com.spaceshiptHunt.level
 			fileStream.open(file, FileMode.WRITE);
 			fileStream.writeMultiByte(JSON.stringify(bodyInfo), "utf-8");
 			fileStream.close();
+		}
+		
+		/** A bug fix for starling 2.0 not updating canvas */
+		override public function updatePhysics(passedTime:Number):void
+		{
+			super.updatePhysics(passedTime);
+			for (var i:int = 0; i < obstacleDisplay.length; i++) 
+			{
+			obstacleDisplay[i].setRequiresRedraw();	
+			}
 		}
 		
 		public function handleTouch(e:TouchEvent):void
@@ -366,7 +377,6 @@ package com.spaceshiptHunt.level
 					navPolygon[navPolygon.length - 2] = navPolygon[0];
 					navPolygon[navPolygon.length - 1] = navPolygon[1];
 					navShape[lastObstacleIndex].coordinates = navPolygon;
-					
 					obstacleDisplay[lastObstacleIndex].clear();
 					obstacleDisplay[lastObstacleIndex].drawPolygon(currentPoly);
 					drawVertices(Color.BLUE);

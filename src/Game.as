@@ -20,7 +20,7 @@ package
 	import starling.core.Starling;
 	import starling.display.Canvas;
 	import starling.display.Image;
-	import starling.display.QuadBatch;
+	import starling.display.MeshBatch;
 	import starling.display.Sprite;
 	import starling.events.EnterFrameEvent;
 	import starling.events.Event;
@@ -30,8 +30,10 @@ package
 	import starling.events.TouchEvent;
 	import starling.events.TouchPhase;
 	import starling.textures.RenderTexture;
+	import starling.textures.Texture;
 	import starling.textures.TextureOptions;
 	import starling.utils.Color;
+	import starling.utils.Pool;
 	CONFIG::debug
 	{
 		import com.spaceshiptHunt.level.EnvironmentBuilder;
@@ -49,7 +51,7 @@ package
 		private var player:Player;
 		private var mousePosition:Point;
 		private var joystickRadios:Number;
-		private var joystick:QuadBatch;
+		//private var joystick:MeshBatch;
 		private var joystickTranslation:Matrix = new Matrix();
 		private var joystickPosition:Point;
 		private var xboxController:Xbox360Controller;
@@ -100,7 +102,7 @@ package
 				obstacleMask = new Canvas();
 				addChild(obstacleMask);
 			}
-			joystick = new QuadBatch();
+			//joystick = new MeshBatch();
 			drawJoystick();
 			Starling.current.start();
 			Starling.current.stop();
@@ -117,24 +119,24 @@ package
 		{
 			Environment.assetsLoader.enqueue("grp/textureAtlases.xml");
 			Environment.assetsLoader.enqueue("grp/textureAtlases.png");
-			Environment.assetsLoader.enqueueWithName("grp/stars.png", "stars", new TextureOptions(1.0, false, "bgra", true));
-			Environment.assetsLoader.enqueueWithName("grp/concrete_baked.png", "concrete", new TextureOptions(1.0, false, "bgra", true));
 			gameEnvironment.loadLevel(onFinishLoading);
 		}
 		
 		private function onFinishLoading():void
 		{
 			background = new Image(Environment.assetsLoader.getTexture("stars"));
-			obstacleTexture = new Image(Environment.assetsLoader.getTexture("concrete"));
+			obstacleTexture = new Image(Environment.assetsLoader.getTexture("concrete_baked"));
+			background.tileGrid = Pool.getRectangle();
+			obstacleTexture.tileGrid = Pool.getRectangle();
 			addChildAt(background, 0);
 			addChildAt(obstacleTexture, 1);
 			backgroundRatio = Math.ceil(Math.sqrt(stage.stageHeight * stage.stageHeight + stage.stageWidth * stage.stageWidth) / 512) * 2;
-			background.scaleX = background.scaleY = backgroundRatio;
-			obstacleTexture.scaleX = obstacleTexture.scaleY = backgroundRatio;
-			updateImageOffset(obstacleTexture, backgroundRatio);
+			background.scale = backgroundRatio;
+			obstacleTexture.scale = backgroundRatio;
+			//updateImageOffset(obstacleTexture, backgroundRatio);
 			obstacleTexture.mask = obstacleMask;
 			mousePosition = new Point(stage.stageWidth, 0);
-			this.setChildIndex(joystick, numChildren);
+//			this.setChildIndex(joystick, numChildren);
 			player.gunType = "fireCannon";
 			Starling.current.start();
 			Key.init(Starling.current.nativeStage);
@@ -155,34 +157,35 @@ package
 			//	PhysicsParticle.fill.cache();
 		}
 		
-		private function keyUp(e:KeyboardEvent,keyCode:int):void 
+		private function keyUp(e:KeyboardEvent, keyCode:int):void
 		{
-			if (keyCode == Keyboard.ENTER) {
-			player.stopShooting();	
+			if (keyCode == Keyboard.ENTER)
+			{
+				player.stopShooting();
 			}
 		}
 		
 		private function drawJoystick():void
 		{
 			joystickRadios = Math.min(600, Starling.current.stage.stageWidth, Starling.current.stage.stageHeight) / 4;
-			var joyShape:Canvas = new Canvas();
-			joyShape.beginFill(Color.GRAY, 0.3);
-			joyShape.drawCircle(joystickRadios, joystickRadios, joystickRadios);
-			joyShape.endFill();
+			//var joyShape:Canvas = new Canvas();
+			//joyShape.beginFill(Color.GRAY, 0.3);
+			//joyShape.drawCircle(joystickRadios, joystickRadios, joystickRadios);
+			//joyShape.endFill();
 			joystickPosition = new Point(joystickRadios + 20, Starling.current.stage.stageHeight - joystickRadios - 10);
-			var joystickTexture:RenderTexture = new RenderTexture(joystickRadios * 2, joystickRadios * 2);
-			joystickTexture.draw(joyShape);
-			joyShape.dispose();
-			var joystickImage:Image = new Image(joystickTexture);
-			joystick.pivotY = joystick.pivotX = joystickRadios;
-			joystick.x = joystickPosition.x;
-			joystick.y = joystickPosition.y;
-			joystick.addImage(joystickImage);
-			addChild(joystick);
-			joystickImage.pivotY = joystickImage.pivotX = joystickRadios;
-			joystickImage.y = joystickImage.x = joystickRadios;
-			joystickImage.scaleY = joystickImage.scaleX = 0.7;
-			joystick.addImage(joystickImage);
+			//var joystickTexture:RenderTexture = new RenderTexture(joystickRadios * 2, joystickRadios * 2);
+			//joystickTexture.draw(joyShape);
+			//joyShape.dispose();
+			//var joystickImage:Image = new Image(joystickTexture);
+			//joystick.pivotY = joystick.pivotX = joystickRadios;
+			//joystick.x = joystickPosition.x;
+			//joystick.y = joystickPosition.y;
+			//joystick.addImage(joystickImage);
+			//addChild(joystick);
+			//joystickImage.pivotY = joystickImage.pivotX = joystickRadios;
+			//joystickImage.y = joystickImage.x = joystickRadios;
+			//joystickImage.scaleY = joystickImage.scaleX = 0.7;
+			//joystick.addImage(joystickImage);
 		}
 		
 //-----------------------------------------------------------------------------------------------------------------------------------------
@@ -195,9 +198,9 @@ package
 			Starling.current.viewPort.height = e.height;
 			joystickRadios = int(Math.min(800, e.width, e.height) / 5);
 			joystickPosition.setTo(joystickRadios + 20, e.height - joystickRadios - 20);
-			joystick.rotation = 0;
-			joystick.x = joystick.y = 0;
-			joystick.width = joystick.height = joystickRadios * 2;
+			//joystick.rotation = 0;
+			//joystick.x = joystick.y = 0;
+			//joystick.width = joystick.height = joystickRadios * 2;
 		}
 		
 		private function onTouch(e:TouchEvent):void
@@ -267,7 +270,7 @@ package
 			handleJoystickInput();
 			CONFIG::debug
 			{
-			displayDebug();
+				displayDebug();
 			}
 		}
 		
@@ -284,32 +287,32 @@ package
 			v.dispose();
 			background.x = player.body.position.x - player.body.position.x % 512 - background.width / 2;
 			background.y = player.body.position.y - player.body.position.y % 512 - background.height / 2;
-			obstacleTexture.x = player.body.position.x - player.body.position.x % 1024 - obstacleTexture.width / 2;
-			obstacleTexture.y = player.body.position.y - player.body.position.y % 1024 - obstacleTexture.height / 2;
-			updateImageOffset(background, backgroundRatio);
+			//obstacleTexture.x = player.body.position.x - player.body.position.x % 1024 - obstacleTexture.width / 2;
+			//obstacleTexture.y = player.body.position.y - player.body.position.y % 1024 - obstacleTexture.height / 2;
+			//updateImageOffset(background, backgroundRatio);
 		}
 		
 		private function updateImageOffset(image:Image, ratio:Number):void
 		{
 			var xx:Number = ((player.body.position.x / image.width % 1) + 1);
 			var yy:Number = ((player.body.position.y / image.height % 1) + 1);
-			image.setTexCoordsTo(0, xx, yy);
-			image.setTexCoordsTo(1, xx + ratio, yy);
-			image.setTexCoordsTo(2, xx, yy + ratio);
-			image.setTexCoordsTo(3, xx + ratio, yy + ratio);
+			image.setTexCoords(0, xx, yy);
+			image.setTexCoords(1, xx + ratio, yy);
+			image.setTexCoords(2, xx, yy + ratio);
+			image.setTexCoords(3, xx + ratio, yy + ratio);
 		}
 		
 		CONFIG::debug private function displayDebug():void
 		{
-			//napeDebug.clear();
-			//napeDebug.draw(Environment.physicsSpace);
-			//napeDebug.flush();
-			//napeDebug.transform = Mat23.fromMatrix(this.transformationMatrix);
-			//nevMeshView.drawEntity(enemy.pathfindingAgent, true);
-			//nevMeshView.drawEntity(player.pathfindingAgent, false);
-			//nevMeshView.drawPath(enemy.path);
-			//nevMeshView.drawMesh(Environment.navMesh);
-			//nevMeshView.surface.transform.matrix = this.transformationMatrix;
+			napeDebug.clear();
+			napeDebug.draw(Environment.physicsSpace);
+			napeDebug.flush();
+			napeDebug.transform = Mat23.fromMatrix(this.transformationMatrix);
+			nevMeshView.drawEntity(enemy.pathfindingAgent, true);
+			nevMeshView.drawEntity(player.pathfindingAgent, false);
+			nevMeshView.drawPath(enemy.path);
+			nevMeshView.drawMesh(Environment.navMesh);
+			nevMeshView.surface.transform.matrix = this.transformationMatrix;
 		}
 		
 		private function handleKeyboardInput():void
@@ -376,31 +379,33 @@ package
 		
 		private function handleJoystickInput():void
 		{
-			globalToLocal(joystickPosition, pointPool);
-			joystick.x = pointPool.x;
-			joystick.y = pointPool.y;
-			joystick.rotation = -this.rotation;
+			var joystickLocalPosition:Point = Pool.getPoint(0, 0);
+			globalToLocal(joystickPosition, joystickLocalPosition);
+			//joystick.x = pointPool.x;
+			//joystick.y = pointPool.y;
+			//joystick.rotation = -this.rotation;
+			//	Pool.putPoint(joystickLocalPosition);
 			if (mousePosition.length < joystickRadios + 70)
 			{
-				joystickTranslation.invert();
-				joystick.transformQuad(1, joystickTranslation);
-				joystickTranslation.tx = 0;
-				joystickTranslation.ty = 0;
-				joystickTranslation.translate(mousePosition.x, mousePosition.y);
-				joystick.transformQuad(1, joystickTranslation);
+				//joystickTranslation.invert();
+				//joystick.transformQuad(1, joystickTranslation);
+				//joystickTranslation.tx = 0;
+				//joystickTranslation.ty = 0;
+				//joystickTranslation.translate(mousePosition.x, mousePosition.y);
+				//joystick.transformQuad(1, joystickTranslation);
 				player.leftImpulse.y = player.maxTurningAcceleration * mousePosition.x / 160 + player.maxAcceleration * mousePosition.y / 160;
 				player.rightImpulse.y = -player.maxTurningAcceleration * mousePosition.x / 160 + player.maxAcceleration * mousePosition.y / 160;
 				player.stopShooting();
 			}
 			else
 			{
-				if (!(joystickTranslation.tx == 0 && joystickTranslation.ty == 0))
-				{
-					joystickTranslation.invert();
-					joystick.transformQuad(1, joystickTranslation);
-					joystickTranslation.tx = 0;
-					joystickTranslation.ty = 0;
-				}
+				//if (!(joystickTranslation.tx == 0 && joystickTranslation.ty == 0))
+				//{
+				//joystickTranslation.invert();
+				//joystick.transformQuad(1, joystickTranslation);
+				//joystickTranslation.tx = 0;
+				//joystickTranslation.ty = 0;
+				//}
 				if (ControllerInput.hasRemovedController())
 				{
 					if (ControllerInput.getRemovedController() == xboxController)

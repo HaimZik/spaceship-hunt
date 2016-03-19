@@ -1,7 +1,7 @@
 package com.spaceshiptHunt.entities
 {
 	import com.spaceshiptHunt.level.Environment;
-	import de.flintfabrik.starling.display.FFParticleSystem.Particle;
+	import starling.extensions.PDParticle;
 	import flash.utils.Dictionary;
 	import nape.geom.Vec2;
 	import starling.animation.IAnimatable;
@@ -27,7 +27,7 @@ package com.spaceshiptHunt.entities
 		protected var weaponRight:Image;
 		protected var weaponLeft:Image;
 		protected var firingRate:Number =0.1;
-		private var shootingCall:IAnimatable;
+		private var shootingCallId:uint;
 		
 		public function Spaceship(position:Vec2)
 		{
@@ -75,20 +75,16 @@ package com.spaceshiptHunt.entities
 		
 		public function startShooting():void
 		{
-			if (!shootingCall)
+			  if (!Starling.juggler.containsDelayedCalls(shootParticle))
 			{
-				shootingCall = Starling.juggler.repeatCall(shootParticle, firingRate);
-				shootParticle();
-			}else if (!Starling.juggler.contains(shootingCall))
-			{
-				Starling.juggler.add(shootingCall);
+				shootingCallId=Starling.juggler.delayCall(shootParticle,firingRate);
 				shootParticle();
 			}
 		}
 		
 		public function stopShooting():void
 		{
-			Starling.juggler.remove(shootingCall);
+			Starling.juggler.removeByID(shootingCallId);
 		}
 		
 		override public function update():void
@@ -110,9 +106,9 @@ package com.spaceshiptHunt.entities
 			impulse.dispose();
 		}
 		
-		public function jetParticlePositioning(particles:Vector.<Particle>, numActive:int):void
+		public function jetParticlePositioning(particles:Vector.<PDParticle>, numActive:int):void
 		{
-			var p:Particle;
+			var p:PDParticle;
 			var velocityLength:Number = body.velocity.length;
 			var speedL:Number = velocityLength / 10 + body.angularVel * 10;
 			for (var i:int = 0; i < numActive; i += 2)
@@ -126,7 +122,7 @@ package com.spaceshiptHunt.entities
 					{
 						if (velocityLength < 20)
 						{
-							p.colorAlpha = 0;
+							p.alpha = 0;
 						}
 						else
 						{
@@ -141,7 +137,7 @@ package com.spaceshiptHunt.entities
 				}
 				else
 				{
-					p.colorAlpha = 0;
+					p.alpha = 0;
 				}
 			}
 			var speedR:Number = -body.angularVel * 1.3 + velocityLength / 180;
@@ -150,7 +146,7 @@ package com.spaceshiptHunt.entities
 				p = particles[i];
 				if (velocityLength < 50)
 				{
-					p.colorAlpha -= 0.5;
+					p.alpha -= 0.5;
 				}
 				else if (p.x > -5)
 				{
@@ -159,7 +155,7 @@ package com.spaceshiptHunt.entities
 					{
 						if (velocityLength < 20)
 						{
-							p.colorAlpha = 0;
+							p.alpha = 0;
 						}
 						else
 						{

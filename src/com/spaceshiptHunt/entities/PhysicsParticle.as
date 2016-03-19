@@ -9,9 +9,9 @@ package com.spaceshiptHunt.entities
 	import starling.animation.Juggler;
 	import starling.core.Starling;
 	import starling.display.Image;
+	import starling.display.MovieClip;
 	import starling.filters.BlurFilter;
 	import starling.textures.Texture;
-	import starling.utils.VectorUtil;
 	
 	/**
 	 * ...
@@ -22,21 +22,22 @@ package com.spaceshiptHunt.entities
 		
 		internal static var ParticlePool:Vector.<PhysicsParticle> = new Vector.<PhysicsParticle>();
 		protected static const poolGrowth:int = 10;
-		protected var currentCall:IAnimatable;
+		protected var currentCallId:uint;
 		public static const INTERACTION_TYPE:CbType= new CbType(); 
 		
 		//	protected var 
 		
 		//	public static const fill:BlurFilter = new BlurFilter(2,2);
 		
-		public function PhysicsParticle(particleTexture:Texture, position:Vec2 = null)
+		public function PhysicsParticle(particleTexture:Vector.<Texture>, position:Vec2 = null)
 		{
 			super(position);
 			body.isBullet = true;
-			graphics = new Image(particleTexture);
+			graphics = new MovieClip(particleTexture);
 			graphics.pivotX = graphics.width / 2;
 			graphics.pivotY = graphics.height / 2;
 			body.cbTypes.add(PhysicsParticle.INTERACTION_TYPE);
+			body.allowRotation = false;
 			//	graphics.filter = fill;
 			//var material:Material = Material.ice().copy();
 			//material.staticFriction = 0;
@@ -48,14 +49,14 @@ package com.spaceshiptHunt.entities
 		
 		public static function spawn(particleType:String, position:Vec2, impulse:Vec2):void
 		{
-			var particleTexture:Texture = Environment.assetsLoader.getTexture(particleType)
+			var particleTexture:Vector.<Texture> = Environment.assetsLoader.getTextures(particleType)
 			if (ParticlePool.length == 0)
 			{
-				var circleShape:Circle = new Circle(particleTexture.width/2);
+				var circleShape:Circle = new Circle(particleTexture[0].width/2);
 				for (var i:int = 0; i < poolGrowth; i++)
 				{
 					ParticlePool.push(new PhysicsParticle(particleTexture));
-					circleShape.filter.collisionMask = ~2;
+					circleShape.filter.collisionMask = ~2;//in order for the raytracing to ignore it
 					ParticlePool[i].body.shapes.add(circleShape.copy());
 					ParticlePool[i].body.mass /= 3;
 				}
@@ -68,13 +69,15 @@ package com.spaceshiptHunt.entities
 			BodyInfo.list[0].graphics.parent.addChild(particle.graphics);
 			particle.updateGraphics();
 			BodyInfo.list.push(particle);
-			particle.currentCall = Starling.juggler.delayCall(particle.dispose, 5);
+			particle.currentCallId = Starling.juggler.delayCall(particle.dispose, 5);
+			Starling.juggler.add(particle.graphics as MovieClip);
+			(particle.graphics as MovieClip).play();
 		}
 		
 		public function dispose():void
 		{
 			if (body.space) {
-			Starling.juggler.remove(currentCall);
+			Starling.juggler.removeByID(currentCallId);
 			graphics.removeFromParent();
 			body.space = null;
 			BodyInfo.list.removeAt(BodyInfo.list.indexOf(this));

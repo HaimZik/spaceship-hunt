@@ -14,8 +14,8 @@ package com.spaceshiptHunt.level
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSObject;
 	import DDLS.factories.DDLSRectMeshFactory;
-	import de.flintfabrik.starling.display.FFParticleSystem;
-	import de.flintfabrik.starling.display.FFParticleSystem.SystemOptions;
+	import starling.extensions.PDParticle;
+	import starling.extensions.PDParticleSystem;
 	import nape.callbacks.CbEvent;
 	import nape.callbacks.CbType;
 	import nape.callbacks.InteractionCallback;
@@ -41,10 +41,10 @@ package com.spaceshiptHunt.level
 		public static var pathfinder:DDLSPathFinder;
 		protected var onFinishLoading:Vector.<Function>;
 		protected var navBody:DDLSObject;
-		private var _player:Player;
-		private var ParticleSysOptions:SystemOptions;
+		protected var _player:Player;
 		[Embed(source = "JetFire.pex", mimeType = "application/octet-stream")]
-		private static const JetFire:Class;
+		private static const JetFireConfig:Class;
+		protected var particleSystem:PDParticleSystem;
 		
 		public function Environment()
 		{
@@ -58,7 +58,6 @@ package com.spaceshiptHunt.level
 			navMesh.insertObject(navBody);
 			pathfinder = new DDLSPathFinder();
 			pathfinder.mesh = navMesh;
-			FFParticleSystem.init(1024, false, 512, 4);
 			var bulletCollisionListener:InteractionListener = new InteractionListener(CbEvent.BEGIN, InteractionType.COLLISION, CbType.ANY_BODY, PhysicsParticle.INTERACTION_TYPE, onBulletHit);
 			physicsSpace.listeners.add(bulletCollisionListener);
 		}
@@ -206,16 +205,15 @@ package com.spaceshiptHunt.level
 		
 		protected function addFireParticle(bodyInfo:Spaceship):void
 		{
-			if (!ParticleSysOptions)
+			if (!particleSystem)
 			{
-				ParticleSysOptions = SystemOptions.fromXML(XML(new JetFire()), assetsLoader.getTexture("fireball"));
+				particleSystem = new PDParticleSystem(XML(new JetFireConfig()), assetsLoader.getTexture("fireball_0"));
 			}
-			var ps:FFParticleSystem = new FFParticleSystem(ParticleSysOptions);
-			ps.customFunction = bodyInfo.jetParticlePositioning;
-			(bodyInfo.graphics as DisplayObjectContainer).addChild(ps);
-			ps.start();
-			ps.x = bodyInfo.engineLocation.x;
-			ps.y = -bodyInfo.engineLocation.y;
+			//particleSystem.customFunction = bodyInfo.jetParticlePositioning;
+			(bodyInfo.graphics as DisplayObjectContainer).addChild(particleSystem);
+			particleSystem.start();
+			particleSystem.x = bodyInfo.engineLocation.x;
+			particleSystem.y = -bodyInfo.engineLocation.y;
 		}
 		
 		private function onBulletHit(event:InteractionCallback):void
