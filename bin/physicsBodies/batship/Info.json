@@ -1,1 +1,5 @@
-{"children":[{"imageName":"batship","y":0,"x":0}],"engineLocation":{"y":-24,"x":76}}
+{
+"type":"PreyEnemy",
+"children":[{"imageName":"batship","y":0,"x":0}],
+"engineLocation":{"y":-24,"x":76}
+}

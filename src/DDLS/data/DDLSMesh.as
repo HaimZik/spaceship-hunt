@@ -181,7 +181,7 @@ package DDLS.data
 			if (!__objectsUpdateInProgress)
 			{
 				var index:int = _objects.indexOf(object);
-				_objects.splice(index, 1);
+				_objects.removeAt(index);
 			}
 		}
 		
@@ -237,7 +237,7 @@ package DDLS.data
 			
 			shape.dispose();
 			
-			_constraintShapes.splice(_constraintShapes.indexOf(shape), 1);
+			_constraintShapes.removeAt(_constraintShapes.indexOf(shape));
 		}
 		
 		public function insertConstraintSegment(x1:Number, y1:Number, x2:Number, y2:Number):DDLSConstraintSegment
@@ -648,9 +648,9 @@ package DDLS.data
 						rightBoundingEdges.push(newEdgeUpDown);
 						insertNewConstrainedEdge(segment, newEdgeDownUp, intersectedEdges, leftBoundingEdges, rightBoundingEdges);
 						
-						intersectedEdges.splice(0, intersectedEdges.length);
-						leftBoundingEdges.splice(0, leftBoundingEdges.length);
-						rightBoundingEdges.splice(0, rightBoundingEdges.length);
+						intersectedEdges.length=0;
+						leftBoundingEdges.length=0;
+						rightBoundingEdges.length=0;
 						
 						vertexDown = edgeLeft.destinationVertex;
 						tempEdgeDownUp.originVertex = vertexDown;
@@ -689,9 +689,9 @@ package DDLS.data
 								rightBoundingEdges.push(newEdgeUpDown);
 								insertNewConstrainedEdge(segment, newEdgeDownUp, intersectedEdges, leftBoundingEdges, rightBoundingEdges);
 								
-								intersectedEdges.splice(0, intersectedEdges.length);
-								leftBoundingEdges.splice(0, leftBoundingEdges.length);
-								rightBoundingEdges.splice(0, rightBoundingEdges.length);
+								intersectedEdges.length=0;
+								leftBoundingEdges.length=0;
+								rightBoundingEdges.length=0;
 								vertexDown = currVertex;
 								tempEdgeDownUp.originVertex = vertexDown;
 								currObjet = vertexDown;
@@ -738,9 +738,9 @@ package DDLS.data
 								rightBoundingEdges.push(newEdgeUpDown);
 								insertNewConstrainedEdge(segment, newEdgeDownUp, intersectedEdges, leftBoundingEdges, rightBoundingEdges);
 								
-								intersectedEdges.splice(0, intersectedEdges.length);
-								leftBoundingEdges.splice(0, leftBoundingEdges.length);
-								rightBoundingEdges.splice(0, rightBoundingEdges.length);
+								intersectedEdges.length=0;
+								leftBoundingEdges.length=0;
+								rightBoundingEdges.length=0;
 								vertexDown = currVertex;
 								tempEdgeDownUp.originVertex = vertexDown;
 								currObjet = vertexDown;
@@ -838,7 +838,7 @@ package DDLS.data
 			if (x < 0 || y < 0 || x > _width || y > _height)
 				return null;
 			
-			__edgesToCheck.splice(0, __edgesToCheck.length);
+			__edgesToCheck.length=0;
 			
 			var inObject:Object = DDLSGeom2D.locatePosition(x, y, this);
 			var inVertex:DDLSVertex;
@@ -924,14 +924,14 @@ package DDLS.data
 			// remove the old TOP-BOTTOM and BOTTOM-TOP edges
 			eBot_Top.dispose();
 			eTop_Bot.dispose();
-			_edges.splice(_edges.indexOf(eBot_Top), 1);
-			_edges.splice(_edges.indexOf(eTop_Bot), 1);
+			_edges.removeAt(_edges.indexOf(eBot_Top));
+			_edges.removeAt(_edges.indexOf(eTop_Bot));
 			
 			// remove the old LEFT and RIGHT faces
 			fLeft.dispose();
 			fRight.dispose();
-			_faces.splice(_faces.indexOf(fLeft), 1);
-			_faces.splice(_faces.indexOf(fRight), 1);
+			_faces.removeAt(_faces.indexOf(fLeft));
+			_faces.removeAt(_faces.indexOf(fRight));
 			
 			return eRight_Left;
 		}
@@ -939,7 +939,7 @@ package DDLS.data
 		public function splitEdge(edge:DDLSEdge, x:Number, y:Number):DDLSVertex
 		{
 			// empty old references
-			__edgesToCheck.splice(0, __edgesToCheck.length);
+			__edgesToCheck.length=0;
 			
 			// retrieve useful objets
 			var eLeft_Right:DDLSEdge = edge;
@@ -1057,9 +1057,16 @@ package DDLS.data
 					edges = eLeft_Right.fromConstraintSegments[i].edges;
 					index = edges.indexOf(eLeft_Right);
 					if (index != -1)
-						edges.splice(index, 1, eLeft_Center, eCenter_Right);
+					{
+						edges[index]=eLeft_Center;
+						edges.insertAt(index, eCenter_Right);
+					}
 					else
-						edges.splice(edges.indexOf(eRight_Left), 1, eRight_Center, eCenter_Left);
+					{
+						index = edges.indexOf(eRight_Left);
+						edges[index]=eRight_Center;
+						edges.insertAt(index, eCenter_Left);
+					}
 				}
 				
 				vCenter.fromConstraintSegments = fromSegments.slice(0);
@@ -1068,14 +1075,14 @@ package DDLS.data
 			// remove the old LEFT-RIGHT and RIGHT-LEFT edges
 			eLeft_Right.dispose();
 			eRight_Left.dispose();
-			_edges.splice(_edges.indexOf(eLeft_Right), 1);
-			_edges.splice(_edges.indexOf(eRight_Left), 1);
+			_edges.removeAt(_edges.indexOf(eLeft_Right));
+			_edges.removeAt(_edges.indexOf(eRight_Left));
 			
 			// remove the old TOP and BOTTOM faces
 			fTop.dispose();
 			fBot.dispose();
-			_faces.splice(_faces.indexOf(fTop), 1);
-			_faces.splice(_faces.indexOf(fBot), 1);
+			_faces.removeAt(_faces.indexOf(fTop));
+			_faces.removeAt(_faces.indexOf(fBot));
 			
 			// add new bounds references for Delaunay restoring
 			__centerVertex = vCenter;
@@ -1090,7 +1097,7 @@ package DDLS.data
 		public function splitFace(face:DDLSFace, x:Number, y:Number):DDLSVertex
 		{
 			// empty old references
-			__edgesToCheck.splice(0, __edgesToCheck.length);
+			__edgesToCheck.length=0;
 			
 			// retrieve useful objects
 			var eTop_Left:DDLSEdge = face.edge;
@@ -1159,7 +1166,7 @@ package DDLS.data
 			
 			// we remove the old face
 			face.dispose();
-			_faces.splice(_faces.indexOf(face), 1);
+			_faces.removeAt(_faces.indexOf(face));
 			
 			// add new bounds references for Delaunay restoring
 			__centerVertex = vCenter;
@@ -1312,11 +1319,14 @@ package DDLS.data
 					index = edges.indexOf(constrainedEdgeA);
 					if (index != -1)
 					{
-						edges.splice(index - 1, 2, edgeA);
+						edges.removeAt(index - 1);
+						edges[index - 1]=edgeA;
 					}
 					else
 					{
-						edges.splice(edges.indexOf(constrainedEdgeB) - 1, 2, edgeB);
+						index = edges.indexOf(constrainedEdgeB) - 1;
+						edges.removeAt(index);
+						edges[index]=edgeB;
 					}
 				}
 			}
@@ -1328,18 +1338,18 @@ package DDLS.data
 				edge = outgoingEdges[i];
 				
 				faceToDelete = edge.leftFace;
-				_faces.splice(_faces.indexOf(faceToDelete), 1);
+				_faces.removeAt(_faces.indexOf(faceToDelete));
 				faceToDelete.dispose();
 				
 				edge.destinationVertex.edge = edge.nextLeftEdge;
 				
-				_edges.splice(_edges.indexOf(edge.oppositeEdge), 1);
+				_edges.removeAt(_edges.indexOf(edge.oppositeEdge));
 				edge.oppositeEdge.dispose();
-				_edges.splice(_edges.indexOf(edge), 1);
+				_edges.removeAt(_edges.indexOf(edge));
 				edge.dispose();
 			}
 			
-			_vertices.splice(_vertices.indexOf(vertex), 1);
+			_vertices.removeAt(_vertices.indexOf(vertex));
 			vertex.dispose();
 			
 			// finally we triangulate
@@ -1385,11 +1395,11 @@ package DDLS.data
 					verticesCleaned[currEdge.destinationVertex] = true;
 				}
 				//
-				_faces.splice(_faces.indexOf(currEdge.leftFace), 1);
+				_faces.removeAt(_faces.indexOf(currEdge.leftFace));
 				currEdge.leftFace.dispose();
 				if (i == edgesList.length - 1)
 				{
-					_faces.splice(_faces.indexOf(currEdge.rightFace), 1);
+					_faces.removeAt(_faces.indexOf(currEdge.rightFace));
 					currEdge.rightFace.dispose();
 				}
 					//
@@ -1399,8 +1409,8 @@ package DDLS.data
 			for (i = 0; i < edgesList.length; i++)
 			{
 				currEdge = edgesList[i];
-				_edges.splice(_edges.indexOf(currEdge.oppositeEdge), 1);
-				_edges.splice(_edges.indexOf(currEdge), 1);
+				_edges.removeAt(_edges.indexOf(currEdge.oppositeEdge));
+				_edges.removeAt(_edges.indexOf(currEdge));
 				currEdge.oppositeEdge.dispose();
 				currEdge.dispose();
 			}

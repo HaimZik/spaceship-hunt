@@ -61,7 +61,7 @@ package DDLS.ai
 		
 		public function findPath(toX:Number, toY:Number, resultPath:Vector.<Number>):void
 		{
-			resultPath.splice(0, resultPath.length);
+			resultPath.length = 0;
 			
 			if (!_mesh)
 				throw new Error("Mesh missing");
@@ -76,8 +76,8 @@ package DDLS.ai
 			_astar.radius = _entity.radius;
 			_funnel.radius = _entity.radius;
 			
-			__listFaces.splice(0, __listFaces.length);
-			__listEdges.splice(0, __listEdges.length);
+			__listFaces.length=0;
+			__listEdges.length=0;
 			_astar.findPath(_entity.x, _entity.y, toX, toY, __listFaces, __listEdges);
 			if (__listFaces.length == 0)
 			{

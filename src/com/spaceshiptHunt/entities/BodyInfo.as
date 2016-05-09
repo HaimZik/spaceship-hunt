@@ -14,7 +14,6 @@ package com.spaceshiptHunt.entities
 	{
 		public var body:Body;
 		public var graphics:DisplayObject;
-		public var needsMeshUpdate:Boolean = false;
 		public static var list:Vector.<BodyInfo> = new Vector.<BodyInfo>();
 		
 		public function BodyInfo(position:Vec2)

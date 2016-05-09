@@ -197,10 +197,8 @@ package DDLS.ai
 			}
 			
 			// our funnels, inited with starting point
-			var funnelLeft:Vector.<DDLSPoint2D> = new Vector.<DDLSPoint2D>();
-			var funnelRight:Vector.<DDLSPoint2D> = new Vector.<DDLSPoint2D>();
-			funnelLeft.push(startPoint);
-			funnelRight.push(startPoint);
+			var funnelLeft:Vector.<DDLSPoint2D> = new <DDLSPoint2D>[startPoint];
+			var funnelRight:Vector.<DDLSPoint2D> = new <DDLSPoint2D>[startPoint];
 			
 			// useful to keep track of done vertices and compare the sides
 			var verticesDoneSide:Dictionary = new Dictionary();
@@ -339,8 +337,9 @@ package DDLS.ai
 							}
 							pathPoints.push(funnelLeft[0]);
 							pathSides[funnelLeft[0]] = 1;
-							funnelRight.splice(0, funnelRight.length);
-							funnelRight.push(funnelLeft[0], currPos);
+							funnelRight.length=2;
+							funnelRight[0] = funnelLeft[0];
+							funnelRight[1]=currPos;
 							break;
 							continue;
 						}
@@ -354,7 +353,7 @@ package DDLS.ai
 							break;
 						else
 						{
-							funnelRight.splice(j + 1, 1);
+							funnelRight.removeAt(j + 1);
 						}
 					}
 				}
@@ -375,8 +374,9 @@ package DDLS.ai
 							}
 							pathPoints.push(funnelRight[0]);
 							pathSides[funnelRight[0]] = -1;
-							funnelLeft.splice(0, funnelLeft.length);
-							funnelLeft.push(funnelRight[0], currPos);
+							funnelLeft.length=2;
+							funnelLeft[0] = funnelRight[0];
+							funnelLeft[1] = currPos;
 							break;
 							continue;
 						}
@@ -390,7 +390,7 @@ package DDLS.ai
 							break;
 						else
 						{
-							funnelLeft.splice(j + 1, 1);
+							funnelLeft.removeAt(j + 1);
 						}
 					}
 				}
@@ -497,7 +497,7 @@ package DDLS.ai
 					smoothAngle(adjustedPoints[i * 2 - 1], newPath[i], adjustedPoints[i * 2], pointSides[newPath[i]], smoothPoints);
 					while (smoothPoints.length)
 					{
-						adjustedPoints.splice(i * 2, 0, smoothPoints.pop());
+						adjustedPoints.insertAt(i * 2,smoothPoints.pop());
 					}
 				}
 			}
@@ -826,14 +826,14 @@ package DDLS.ai
 									pTangent2 = getPoint(tangentsResult[6], tangentsResult[7]);
 								}
 							}
-							adjustedPoints.splice((i - 2) * 2, 1, pTangent1);
-							adjustedPoints.splice(i * 2 - 1, 1, pTangent2);
+							adjustedPoints[(i - 2) * 2] = pTangent1;
+							adjustedPoints[i * 2 - 1]=pTangent2;
 							
 							// delete useless point
-							newPath.splice(i - 1, 1);
-							adjustedPoints.splice((i - 1) * 2 - 1, 2);
-							
-							tangentsResult.splice(0, tangentsResult.length);
+							newPath.removeAt(i - 1);
+							adjustedPoints.removeAt((i - 1) * 2 - 1);
+							adjustedPoints.removeAt((i - 1) * 2 - 1);
+							tangentsResult.length=0;
 							i--;
 						}
 					}
@@ -910,7 +910,7 @@ package DDLS.ai
 				}
 				if (pointInArea)
 				{
-					encirclePoints.splice(index, 0, new DDLSPoint2D(xToCheck, yToCheck));
+					encirclePoints.insertAt(index,new DDLSPoint2D(xToCheck, yToCheck));
 					index++;
 				}
 				else

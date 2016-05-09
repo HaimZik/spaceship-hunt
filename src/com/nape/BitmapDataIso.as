@@ -12,7 +12,7 @@ public class BitmapDataIso implements IsoFunction
 		public var alphaThreshold:Number;
 		public var bounds:AABB;
 		
-		public function BitmapDataIso(bitmap:BitmapData, alphaThreshold:Number = 0x80):void
+		public function BitmapDataIso(bitmap:BitmapData, alphaThreshold:Number = 0x80)
 		{
 			this.bitmap = bitmap;
 			this.alphaThreshold = alphaThreshold;

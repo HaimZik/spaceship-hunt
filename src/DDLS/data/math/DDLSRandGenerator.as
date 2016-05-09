@@ -36,26 +36,27 @@ package DDLS.data.math
 		
 		public function next():int
 		{
-			_tempString = (_currSeed*_currSeed).toString();
-			
-			while (_tempString.length < 8)
-			{
-				_tempString = "0" + _tempString;
-			}
-			
-			_currSeed = int(_tempString.substr( 1 , 5 ));
-			
-			var res:int = Math.round(_rangeMin + (_currSeed / 99999)*(_rangeMax - _rangeMin));
-			
-			if (_currSeed == 0)
-				_currSeed = _originalSeed+_numIter;
-			
-			_numIter++;
-			
-			if (_numIter == 200)
-				reset();
-			
-			return res;
+			//_tempString = (_currSeed*_currSeed).toString();
+			//
+			//while (_tempString.length < 8)
+			//{
+				//_tempString = "0" + _tempString;
+			//}
+			//
+			//_currSeed = int(_tempString.substr( 1 , 5 ));
+			//
+			//var res:int = Math.round(_rangeMin + (_currSeed / 99999)*(_rangeMax - _rangeMin));
+			//
+			//if (_currSeed == 0)
+				//_currSeed = _originalSeed+_numIter;
+			//
+			//_numIter++;
+			//
+			//if (_numIter == 200)
+				//reset();
+				
+			//fix for bad performance
+			return _rangeMin+int(Math.random()*_rangeMax);
 		}
 
 	}

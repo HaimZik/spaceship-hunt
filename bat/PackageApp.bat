@@ -12,5 +12,3 @@ call bat\SetupApp.bat
 set AIR_TARGET=-captive-runtime
 set OPTIONS=-tsa none
 call bat\Packager.bat
-
-pause

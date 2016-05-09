@@ -1,8 +1,7 @@
 package com.spaceshiptHunt.entities
 {
+	import com.spaceshiptHunt.level.Environment;
 	import nape.geom.Vec2;
-	import starling.display.DisplayObject;
-	import starling.utils.AssetManager;
 	
 	/**
 	 * ...
@@ -12,22 +11,26 @@ package com.spaceshiptHunt.entities
 	{
 		public var leftImpulse:Vec2;
 		public var rightImpulse:Vec2;
+		public static var current:Player;
 		
 		public function Player(position:Vec2)
 		{
+			current = this;
 			super(position);
 			rightImpulse = Vec2.get(0, 0);
 			leftImpulse = Vec2.get(0, 0);
 			weaponsPlacement["fireCannon"] = Vec2.get(16, -37);
 		}
 		
-		override public function init(bodyDescription:Object, bodyDisplay:DisplayObject):void
+		override public function init(bodyDescription:Object):void
 		{
-			super.init(bodyDescription, bodyDisplay);
+			super.init(bodyDescription);
 			for (var i:int = 0; i < body.shapes.length; i++)
 			{
 				body.shapes.at(i).filter.collisionMask = ~4;
 			}
+			this.gunType = "fireCannon";
+			Environment.current.navMesh.insertObject(pathfindingAgent.approximateObject);
 		}
 		
 		override public function update():void

@@ -138,12 +138,12 @@ package DDLS.ai.trajectory
 		
 		public function preCompute():void
 		{
-			_preCompX.splice(0, _preCompX.length);
-			_preCompY.splice(0, _preCompY.length);
+			_preCompX.length=1;
+			_preCompY.length=1;
 			_count = 0;
 			
-			_preCompX.push(_currentX);
-			_preCompY.push(_currentY);
+			_preCompX[0]=_currentX;
+			_preCompY[0]=_currentY;
 			_preComputed = false;
 			while (next())
 			{
