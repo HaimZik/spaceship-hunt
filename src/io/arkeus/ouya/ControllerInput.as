@@ -187,7 +187,7 @@ package io.arkeus.ouya {
 			}
 
 			if (result != null) {
-				source.splice(source.indexOf(result), 1);
+				source.removeAt(source.indexOf(result));
 				return result;
 			}
 

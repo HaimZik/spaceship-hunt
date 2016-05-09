@@ -10,17 +10,17 @@
 
 package starling.display
 {
-    import flash.geom.Matrix;
     import flash.geom.Point;
     import flash.geom.Rectangle;
 
     import starling.core.starling_internal;
     import starling.rendering.IndexData;
-    import starling.rendering.MeshStyle;
     import starling.rendering.Painter;
     import starling.rendering.VertexData;
     import starling.rendering.VertexDataFormat;
+    import starling.styles.MeshStyle;
     import starling.textures.Texture;
+    import starling.utils.MatrixUtil;
     import starling.utils.MeshUtil;
 
     use namespace starling_internal;
@@ -38,7 +38,7 @@ package starling.display
      *  to add support for color transformations, normal mapping, etc.</p>
      *
      *  @see MeshBatch
-     *  @see starling.rendering.MeshStyle
+     *  @see starling.styles.MeshStyle
      *  @see starling.rendering.VertexData
      *  @see starling.rendering.IndexData
      */
@@ -47,8 +47,8 @@ package starling.display
         /** @private */ internal var _style:MeshStyle;
         /** @private */ internal var _vertexData:VertexData;
         /** @private */ internal var _indexData:IndexData;
+        /** @private */ internal var _pixelSnapping:Boolean;
 
-        private var _pixelSnapping:Boolean;
         private static var sDefaultStyle:Class = MeshStyle;
 
         /** Creates a new mesh with the given vertices and indices.
@@ -62,7 +62,6 @@ package starling.display
 
             _vertexData = vertexData;
             _indexData = indexData;
-            _pixelSnapping = true;
 
             setStyle(style, false);
         }
@@ -93,43 +92,9 @@ package starling.display
         override public function render(painter:Painter):void
         {
             if (_pixelSnapping)
-                snapToPixels(painter.state.modelviewMatrix, painter.pixelSize);
+                MatrixUtil.snapToPixels(painter.state.modelviewMatrix, painter.pixelSize);
 
             painter.batchMesh(this);
-        }
-
-        private function snapToPixels(matrix:Matrix, pixelSize:Number):void
-        {
-            // Snapping only makes sense if the object is unscaled and rotated only by
-            // multiples of 90 degrees. If that's the case can be found out by looking
-            // at the modelview matrix.
-
-            const E:Number = 0.0001;
-
-            var doSnap:Boolean = false;
-            var aSq:Number, bSq:Number, cSq:Number, dSq:Number;
-
-            if (matrix.b + E > 0 && matrix.b - E < 0 && matrix.c + E > 0 && matrix.c - E < 0)
-            {
-                // what we actually want is 'Math.abs(matrix.a)', but squaring
-                // the value works just as well for our needs & is faster.
-
-                aSq = matrix.a * matrix.a;
-                dSq = matrix.d * matrix.d;
-                doSnap = aSq + E > 1 && aSq - E < 1 && dSq + E > 1 && dSq - E < 1;
-            }
-            else if (matrix.a + E > 0 && matrix.a - E < 0 && matrix.d + E > 0 && matrix.d - E < 0)
-            {
-                bSq = matrix.b * matrix.b;
-                cSq = matrix.c * matrix.c;
-                doSnap = bSq + E > 1 && bSq - E < 1 && cSq + E > 1 && cSq - E < 1;
-            }
-
-            if (doSnap)
-            {
-                matrix.tx = Math.round(matrix.tx / pixelSize) * pixelSize;
-                matrix.ty = Math.round(matrix.ty / pixelSize) * pixelSize;
-            }
         }
 
         /** Sets the style that is used to render the mesh. Styles (which are always subclasses of
@@ -162,6 +127,25 @@ package starling.display
         }
 
         // vertex manipulation
+
+        /** The position of the vertex at the specified index, in the mesh's local coordinate
+         *  system.
+         *
+         *  <p>Only modify the position of a vertex if you know exactly what you're doing, as
+         *  some classes might not work correctly when their vertices are moved. E.g. the
+         *  <code>Quad</code> class expects its vertices to spawn up a perfectly rectangular
+         *  area; some of its optimized methods won't work correctly if that premise is no longer
+         *  fulfilled or the original bounds change.</p>
+         */
+        public function getVertexPosition(vertexID:int, out:Point=null):Point
+        {
+            return _style.getVertexPosition(vertexID, out);
+        }
+
+        public function setVertexPosition(vertexID:int, x:Number, y:Number):void
+        {
+            _style.setVertexPosition(vertexID, x, y);
+        }
 
         /** Returns the alpha value of the vertex at the specified index. */
         public function getVertexAlpha(vertexID:int):Number
@@ -237,10 +221,15 @@ package starling.display
         public function get textureSmoothing():String { return _style.textureSmoothing; }
         public function set textureSmoothing(value:String):void { _style.textureSmoothing = value; }
 
-        /** Controls whether or not the mesh object is snapped to the nearest pixel. This
-         *  can prevent the object from looking blurry when it's not exactly aligned with the
-         *  pixels of the screen. For this to work, the object must be unscaled and may only
-         *  be rotated by multiples of 90 degrees. @default true */
+        /** Indicates if pixels at the edges will be repeated or clamped. Only works for
+         *  power-of-two textures; for a solution that works with all kinds of textures,
+         *  see <code>Image.tileGrid</code>. @default false */
+        public function get textureRepeat():Boolean { return _style.textureRepeat; }
+        public function set textureRepeat(value:Boolean):void { _style.textureRepeat = value; }
+
+        /** Controls whether or not the instance snaps to the nearest pixel. This can prevent the
+         *  object from looking blurry when it's not exactly aligned with the pixels of the screen.
+         *  @default false */
         public function get pixelSnapping():Boolean { return _pixelSnapping; }
         public function set pixelSnapping(value:Boolean):void { _pixelSnapping = value; }
 

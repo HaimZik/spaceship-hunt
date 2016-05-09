@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker http://www.codeandweb.com/texturepacker-->
+<!-- $TexturePacker:SmartUpdate:18fa54f1b84c47afe6e9b09501bd9326:c0766fd6c0a3e78881ee98c61439b00a:d5fd9e6f3ad7e09fda09871f79b3bef8$ -->
+<TextureAtlas imagePath="concrete_baked.atf" width="1024" height="1024">
+    <SubTexture name="concrete_baked" x="0" y="0" width="1024" height="1024"/>
+</TextureAtlas>

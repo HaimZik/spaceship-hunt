@@ -5,17 +5,14 @@ package com.spaceshiptHunt.level
 	 * @author Haim Shnitzer
 	 */
 	
-	import com.spaceshiptHunt.entities.BodyInfo;
-	import com.spaceshiptHunt.entities.Entity;
-	import com.spaceshiptHunt.entities.PhysicsParticle;
-	import com.spaceshiptHunt.entities.Player;
-	import com.spaceshiptHunt.entities.Spaceship;
 	import DDLS.ai.DDLSPathFinder;
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSObject;
 	import DDLS.factories.DDLSRectMeshFactory;
-	import starling.extensions.PDParticle;
-	import starling.extensions.PDParticleSystem;
+	import com.spaceshiptHunt.entities.*;
+	import flash.geom.Point;
+	import flash.system.Capabilities;
+	import flash.system.TouchscreenType;
 	import nape.callbacks.CbEvent;
 	import nape.callbacks.CbType;
 	import nape.callbacks.InteractionCallback;
@@ -27,32 +24,48 @@ package com.spaceshiptHunt.level
 	import nape.phys.BodyType;
 	import nape.shape.Polygon;
 	import nape.space.Space;
-	import starling.display.Canvas;
-	import starling.display.DisplayObject;
+	import starling.core.Starling;
 	import starling.display.DisplayObjectContainer;
+	import starling.display.Mesh;
+	import starling.display.Sprite;
+	import starling.extensions.PDParticleSystem;
+	import starling.extensions.lighting.LightSource;
+	import starling.extensions.lighting.LightStyle;
 	import starling.geom.Polygon;
+	import starling.rendering.VertexData;
+	import starling.textures.Texture;
 	import starling.utils.AssetManager;
+	import starling.utils.Pool;
 	
 	public class Environment
 	{
-		public static var assetsLoader:AssetManager;
-		public static var navMesh:DDLSMesh;
-		public static var physicsSpace:Space;
-		public static var pathfinder:DDLSPathFinder;
-		protected var onFinishLoading:Vector.<Function>;
+		public var mainDisplay:Sprite;
+		public var meshNeedsUpdate:Boolean=true;
+		public var assetsLoader:AssetManager;
+		public var navMesh:DDLSMesh;
+		public var physicsSpace:Space;
+		public var pathfinder:DDLSPathFinder;
+		public var light:LightSource;
+		protected var lastNavMeshUpdate:Number;
+		protected var commandQueue:Vector.<Function>;
 		protected var navBody:DDLSObject;
-		protected var _player:Player;
-		[Embed(source = "JetFire.pex", mimeType = "application/octet-stream")]
-		private static const JetFireConfig:Class;
 		protected var particleSystem:PDParticleSystem;
 		
-		public function Environment()
+		[Embed(source = "JetFire.pex", mimeType = "application/octet-stream")]
+		protected static const JetFireConfig:Class;
+		
+		protected var asteroidField:Sprite;
+		static private var currentEnvironment:Environment;
+		
+		public function Environment(mainSprite:Sprite)
 		{
+			currentEnvironment = this;
+			mainDisplay = mainSprite;
 			physicsSpace = new Space(new Vec2(0, 0));
 			physicsSpace.worldAngularDrag = 3.0;
 			physicsSpace.worldLinearDrag = 2;
 			assetsLoader = new AssetManager();
-			onFinishLoading = new Vector.<Function>();
+			commandQueue = new Vector.<Function>();
 			navMesh = DDLSRectMeshFactory.buildRectangle(10000, 10000);
 			navBody = new DDLSObject();
 			navMesh.insertObject(navBody);
@@ -60,97 +73,144 @@ package com.spaceshiptHunt.level
 			pathfinder.mesh = navMesh;
 			var bulletCollisionListener:InteractionListener = new InteractionListener(CbEvent.BEGIN, InteractionType.COLLISION, CbType.ANY_BODY, PhysicsParticle.INTERACTION_TYPE, onBulletHit);
 			physicsSpace.listeners.add(bulletCollisionListener);
+			light = new LightSource();
+			light.z = -800;
+			light.brightness = 0.8;
+			if (Capabilities.touchscreenType != TouchscreenType.NONE)
+			{
+				light.brightness -= 0.4;
+			}
+			light.ambientBrightness = 0.1;
+			//light.showLightBulb = true;
+			lastNavMeshUpdate = Starling.juggler.elapsedTime;
 		}
 		
-		public function set player(value:Player):void
+		public static function get current():Environment
 		{
-			_player = value;
+			return currentEnvironment;
 		}
 		
 		public function updatePhysics(passedTime:Number):void
 		{
+			light.x = Player.current.graphics.x;
+			light.y = Player.current.graphics.y + 400;
 			physicsSpace.step(passedTime);
 			var length:int = BodyInfo.list.length;
-			var meshNeedsUpdate:Boolean = false;
 			for (var j:int = 0; j < length; j++)
 			{
 				var bodyInfo:BodyInfo = BodyInfo.list[j];
 				bodyInfo.update();
-				if (bodyInfo.needsMeshUpdate)
-				{
-					meshNeedsUpdate = bodyInfo.needsMeshUpdate;
-					bodyInfo.needsMeshUpdate = false;
-				}
 			}
-			if (meshNeedsUpdate)
+			if (meshNeedsUpdate && Starling.juggler.elapsedTime - lastNavMeshUpdate > 1.0)
 			{
 				navMesh.updateObjects();
+				lastNavMeshUpdate = Starling.juggler.elapsedTime;
+				meshNeedsUpdate = false;
 			}
 		}
 		
-		public function enqueueBody(name:String, body:Body = null, bodyDisplay:DisplayObject = null):void
+		public function enqueueLevel(levelName:String):void
 		{
-			var infoFileName:String = assetsLoader.enqueueWithName("physicsBodies/" + name + "/Info.json", name + "Info");
-			onFinishLoading.push(function onFinish():void
+			var level:Object = JSON.parse(new LevelInfo[levelName]());
+			for (var i:int = 0; i < level.entities.length; i++)
+			{
+				enqueueBody(level.entities[i]);
+			}
+		}
+		
+		public function enqueueBody(fileInfo:Object):void
+		{
+			var infoFileName:String = assetsLoader.enqueueWithName("physicsBodies/" + fileInfo.fileName + "/Info.json", fileInfo.fileName + "Info");
+			commandQueue.push(function onFinish():void
 			{
 				var bodyDescription:Object = assetsLoader.getObject(infoFileName);
-				var i:int = 0;
 				var meshFileName:String;
-				if (bodyDescription.hasOwnProperty("children"))
-				{
-					meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + name + "/Mesh.json", name + "Mesh");
-				}
-				else
+				if (bodyDescription.type == "Static")
 				{
 					CONFIG::debug
 					{
-						meshFileName = assetsLoader.enqueueWithName("devPhysicsBodies/" + name + "/Mesh.json", name + "Mesh");
+						meshFileName = assetsLoader.enqueueWithName("devPhysicsBodies/" + fileInfo.fileName + "/Mesh.json", fileInfo.fileName + "Mesh");
 					}
 					CONFIG::release
 					{
-						meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + name + "/Mesh.json", name + "Mesh");
+						meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + fileInfo.fileName + "/Mesh.json", fileInfo.fileName + "Mesh");
 					}
 				}
-				onFinishLoading.push(function onFinish():void
+				else
+				{
+					meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + fileInfo.fileName + "/Mesh.json", fileInfo.fileName + "Mesh");
+				}
+				commandQueue.push(function onFinish():void
 				{
 					var polygonArray:Array = assetsLoader.getObject(meshFileName) as Array;
-					if (bodyDescription.hasOwnProperty("children"))
+					if (bodyDescription.type != "Static")
 					{
-						for (i = 0; i < polygonArray.length; i++)
+						var EntityType:Class = LevelInfo.entityTypes["com.spaceshiptHunt.entities::" + bodyDescription.type];
+						for (var i:int = 0; i < fileInfo.cords.length; i++)
 						{
-							addMesh(polygonArray[i], body);
-						}
-						var bodyInfo:Entity = (body.userData.info as Entity);
-						bodyInfo.init(bodyDescription, bodyDisplay);
-						if (bodyDescription.hasOwnProperty("engineLocation"))
-						{
-							var spcaeship:Spaceship = bodyInfo as Spaceship;
-							addFireParticle(spcaeship);
-							if (spcaeship == _player)
+							var bodyInfo:Entity = new EntityType(new Vec2(fileInfo.cords[i], fileInfo.cords[++i]));
+							mainDisplay.addChild(bodyInfo.graphics);
+							for (var j:int = 0; j < polygonArray.length; j++)
 							{
-								navMesh.insertObject(spcaeship.pathfindingAgent.approximateObject);
+								addMesh(polygonArray[j], bodyInfo.body);
 							}
+							bodyInfo.init(bodyDescription);
+							if (bodyDescription.hasOwnProperty("engineLocation"))
+							{
+								var spcaeship:Spaceship = bodyInfo as Spaceship;
+								addFireParticle(spcaeship);
+							}
+							physicsSpace.bodies.add(bodyInfo.body);
 						}
 					}
 					else
 					{
-						//	bodyDisplay.touchable = false;
-						//	var outline:Canvas = new Canvas();
-						for (i = 0; i < polygonArray.length; i++)
+						var texture:Texture = assetsLoader.getTexture(bodyDescription.textureName);
+						var normalMap:Texture = assetsLoader.getTexture(bodyDescription.textureName + "_n");
+						var body:Body = new Body(BodyType.STATIC);
+						asteroidField = new Sprite();
+						for (var k:int = 0; k < polygonArray.length; k++)
 						{
-							addMesh(polygonArray[i], body, bodyDisplay);
+							addMesh(polygonArray[k], body);
+							drawMesh(mainDisplay.addChild(asteroidField) as DisplayObjectContainer, new starling.geom.Polygon(polygonArray[k]), texture, normalMap);
 						}
-							//outline.filter = BlurFilter.createGlow(Color.SILVER,0.3);
-							//bodyDisplay.parent.addChildAt(outline,0);
+						physicsSpace.bodies.add(body);
 					}
-					physicsSpace.bodies.add(body);
 					assetsLoader.removeObject(meshFileName);
 					assetsLoader.removeObject(infoFileName);
 				})
 			});
 		}
 		
-		protected function addMesh(points:Array, body:Body, canvas:DisplayObject = null):void
+		protected function drawMesh(container:DisplayObjectContainer, polygon:starling.geom.Polygon, texture:Texture, normalMap:Texture = null):void
+		{
+			var vertexPos:VertexData = new VertexData(null, polygon.numVertices);
+			polygon.copyToVertexData(vertexPos)
+			var mesh:Mesh = new Mesh(vertexPos, polygon.triangulate());
+			mesh.texture = texture;
+			if (normalMap)
+			{
+				var lightStyle:LightStyle = new LightStyle(normalMap);
+				lightStyle.light = light;
+				mesh.style = lightStyle;
+			}
+			mesh.textureRepeat = true;
+			applyUV(mesh);
+			container.addChild(mesh);
+		}
+		
+		protected function applyUV(mesh:Mesh):void
+		{
+			var vertex:Point = Pool.getPoint();
+			for (var i:int = 0; i < mesh.numVertices; i++)
+			{
+				mesh.getVertexPosition(i, vertex);
+				mesh.setTexCoords(i, (vertex.x / mesh.style.texture.width), ((vertex.y / mesh.style.texture.height)));
+			}
+			Pool.putPoint(vertex);
+		}
+		
+		protected function addMesh(points:Array, body:Body):void
 		{
 			var vec2List:Vec2List = new Vec2List();
 			var i:int = 0;
@@ -176,26 +236,21 @@ package com.spaceshiptHunt.level
 					vec2List.add(Vec2.weak(points[i], points[++i]));
 				}
 			}
-			if (canvas)
-			{
-				var polygon:starling.geom.Polygon = new starling.geom.Polygon(points);
-				(canvas as Canvas).drawPolygon(polygon);
-			}
 			body.shapes.add(new nape.shape.Polygon(vec2List));
 			vec2List.clear();
 			vec2List = null;
 		}
 		
-		public function loadLevel(onFinish:Function):void
+		public function startLoading(onFinish:Function):void
 		{
 			assetsLoader.loadQueue(function onProgress(ratio:Number):void
 			{
 				if (ratio == 1.0)
 				{
-					var length:int = onFinishLoading.length;
+					var length:int = commandQueue.length;
 					for (var i:int = 0; i < length; i++)
 					{
-						(onFinishLoading.shift())();
+						(commandQueue.shift())();
 					}
 					onFinish();
 					navMesh.updateObjects();
@@ -205,15 +260,26 @@ package com.spaceshiptHunt.level
 		
 		protected function addFireParticle(bodyInfo:Spaceship):void
 		{
-			if (!particleSystem)
-			{
-				particleSystem = new PDParticleSystem(XML(new JetFireConfig()), assetsLoader.getTexture("fireball_0"));
-			}
-			//particleSystem.customFunction = bodyInfo.jetParticlePositioning;
+			
+			//if (!particleSystem)
+			//{
+			particleSystem = new PDParticleSystem(XML(new JetFireConfig()), assetsLoader.getTexture("fireball_0"));
+			particleSystem.batchable = true;
 			(bodyInfo.graphics as DisplayObjectContainer).addChild(particleSystem);
+			var particleSystem2:PDParticleSystem = new PDParticleSystem(XML(new JetFireConfig()), assetsLoader.getTexture("fireball_0"));
+			(bodyInfo.graphics as DisplayObjectContainer).addChild(particleSystem2);
 			particleSystem.start();
+			particleSystem2.start();
+			Starling.juggler.add(particleSystem);
+			Starling.juggler.add(particleSystem2);
 			particleSystem.x = bodyInfo.engineLocation.x;
 			particleSystem.y = -bodyInfo.engineLocation.y;
+			particleSystem.gravityY = 100;
+			particleSystem2.x = -bodyInfo.engineLocation.x;
+			particleSystem2.y = -bodyInfo.engineLocation.y;
+			particleSystem2.gravityY = 100;
+			//	}
+			//particleSystem.customFunction = bodyInfo.jetParticlePositioning;
 		}
 		
 		private function onBulletHit(event:InteractionCallback):void

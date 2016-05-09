@@ -3,14 +3,10 @@ package com.spaceshiptHunt.entities
 	import com.spaceshiptHunt.level.Environment;
 	import nape.callbacks.CbType;
 	import nape.geom.Vec2;
-	import nape.phys.Material;
 	import nape.shape.Circle;
-	import starling.animation.IAnimatable;
-	import starling.animation.Juggler;
 	import starling.core.Starling;
-	import starling.display.Image;
+	import starling.display.DisplayObject;
 	import starling.display.MovieClip;
-	import starling.filters.BlurFilter;
 	import starling.textures.Texture;
 	
 	/**
@@ -49,7 +45,7 @@ package com.spaceshiptHunt.entities
 		
 		public static function spawn(particleType:String, position:Vec2, impulse:Vec2):void
 		{
-			var particleTexture:Vector.<Texture> = Environment.assetsLoader.getTextures(particleType)
+			var particleTexture:Vector.<Texture> = Environment.current.assetsLoader.getTextures(particleType)
 			if (ParticlePool.length == 0)
 			{
 				var circleShape:Circle = new Circle(particleTexture[0].width/2);
@@ -65,8 +61,9 @@ package com.spaceshiptHunt.entities
 			particle.body.position.set(position);
 			particle.body.applyImpulse(impulse);
 			particle.body.rotation = impulse.angle;
-			particle.body.space = Environment.physicsSpace;
-			BodyInfo.list[0].graphics.parent.addChild(particle.graphics);
+			particle.body.space = Environment.current.physicsSpace;
+			var otherBodyGrp:DisplayObject = BodyInfo.list[0].graphics;
+			otherBodyGrp.parent.addChildAt(particle.graphics,otherBodyGrp.parent.getChildIndex(otherBodyGrp));
 			particle.updateGraphics();
 			BodyInfo.list.push(particle);
 			particle.currentCallId = Starling.juggler.delayCall(particle.dispose, 5);

@@ -46,7 +46,7 @@ package DDLS.data
 				index = _edges.indexOf(edge.oppositeEdge);
 			
 			if ( index != -1 )
-				_edges.splice(index, 1);
+				_edges.removeAt(index);
 		}
 		
 		public function get edges():Vector.<DDLSEdge>

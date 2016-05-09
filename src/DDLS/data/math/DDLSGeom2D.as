@@ -36,13 +36,12 @@ package DDLS.data.math
 			_randGen.seed = x*10 + 4*y;
 			
 			var i:int;
-			
-			__samples.splice(0, __samples.length);
-			var numSamples:int = Math.pow(mesh.__vertices.length, 1/3);
+			var numSamples:int = Math.pow(mesh.__vertices.length, 1 / 3);
+			__samples.length = numSamples;
 			_randGen.rangeMin = 0;
 			_randGen.rangeMax = mesh.__vertices.length-1;
 			for (i=0 ; i<numSamples ; i++)
-				__samples.push(mesh.__vertices[_randGen.next()]);
+				__samples[i]=mesh.__vertices[_randGen.next()];
 			
 			var currVertex:DDLSVertex;
 			var currVertexPos:DDLSPoint2D;

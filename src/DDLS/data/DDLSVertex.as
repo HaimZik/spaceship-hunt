@@ -8,7 +8,7 @@ package DDLS.data
 		private static var INC:int = 0;
 		private var _id:int;
 		
-		private var _pos:DDLSPoint2D;
+		public var pos:DDLSPoint2D;
 		
 		private var _isReal:Boolean;
 		private var _edge:DDLSEdge;
@@ -22,7 +22,7 @@ package DDLS.data
 			_id = INC;
 			INC++;
 			
-			_pos = new DDLSPoint2D();
+			pos = new DDLSPoint2D();
 			
 			_fromConstraintSegments = new Vector.<DDLSConstraintSegment>();
 		}
@@ -35,11 +35,6 @@ package DDLS.data
 		public function get isReal():Boolean
 		{
 			return _isReal;
-		}
-		
-		public function get pos():DDLSPoint2D
-		{
-			return _pos;
 		}
 		
 		public function get fromConstraintSegments():Vector.<DDLSConstraintSegment>
@@ -68,12 +63,12 @@ package DDLS.data
 		{
 			var index:int = _fromConstraintSegments.indexOf(segment);
 			if ( index != -1 )
-				_fromConstraintSegments.splice(index, 1);
+				_fromConstraintSegments.removeAt(index);
 		}
 		
 		public function dispose():void
 		{
-			_pos = null;
+			pos = null;
 			_edge = null;
 			_fromConstraintSegments = null;
 		}

@@ -4,13 +4,15 @@ package com.spaceshiptHunt.entities
 	 * ...
 	 * @author Haim Shnitzer
 	 */
-	import com.spaceshiptHunt.entities.BodyInfo;
-	import com.spaceshiptHunt.level.Environment;
 	import DDLS.ai.DDLSEntityAI;
-	import starling.display.DisplayObject;
+	import com.spaceshiptHunt.level.Environment;
 	import nape.geom.Vec2;
+	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
 	import starling.display.Image;
+	import starling.display.Sprite;
+	import starling.extensions.lighting.LightStyle;
+	import starling.textures.Texture;
 	
 	public class Entity extends BodyInfo
 	{
@@ -23,21 +25,25 @@ package com.spaceshiptHunt.entities
 			_pathfindingAgent.x = position.x;
 			_pathfindingAgent.y = _pathfindingAgent.y;
 			BodyInfo.list.push(this);
+			graphics = new Sprite();
 		}
 		
-		public function init(bodyDescription:Object, bodyDisplay:DisplayObject):void
+		public function init(bodyDescription:Object):void
 		{
 			var child:Image;
 			for (var i:int = 0; i < bodyDescription.children.length; i++)
 			{
-				child = new Image(Environment.assetsLoader.getTexture(bodyDescription.children[i].imageName));
+				child = new Image(Environment.current.assetsLoader.getTexture(bodyDescription.children[i].imageName));
+				var normalMap:Texture = Environment.current.assetsLoader.getTexture(bodyDescription.children[i].imageName + "_n");
+				var lightStyle:LightStyle = new LightStyle(normalMap);
+				lightStyle.light = Environment.current.light;
+				child.style = lightStyle;
 				child.x = bodyDescription.children[i].x;
 				child.y = bodyDescription.children[i].y;
 				child.pivotX = child.width / 2;
 				child.pivotY = child.height / 2;
-				(bodyDisplay as DisplayObjectContainer).addChild(child);
+				(graphics as DisplayObjectContainer).addChild(child);
 			}
-			graphics = bodyDisplay;
 			pathfindingAgent.radius = 30 + Math.sqrt(body.bounds.width * body.bounds.width + body.bounds.height * body.bounds.height) / 2;
 			pathfindingAgent.buildApproximation();
 			pathfindingAgent.radius -= 30;

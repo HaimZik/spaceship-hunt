@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker http://www.codeandweb.com/texturepacker-->
+<!-- $TexturePacker:SmartUpdate:c9f8c72127134842aa0931e86660419c:a198d2a3813db80ac03af6f6085ae044:85d956b483c5a292e5391ff378fd2447$ -->
+<TextureAtlas imagePath="starling-0.png" width="512" height="512">
+    <SubTexture name="starlingBird" x="0" y="0" width="512" height="512"/>
+</TextureAtlas>

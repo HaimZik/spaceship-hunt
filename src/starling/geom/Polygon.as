@@ -260,21 +260,6 @@ package starling.geom
             for (var i:int=0; i<numVertices; ++i)
                 target.setPoint(targetVertexID + i, attrName, _coords[i * 2], _coords[i * 2 + 1]);
         }
-		
-		        /** Copies all vertices to a 'Vector', beginning at a certain target index and skipping
-         *  'stride' coordinates between each 'x, y' pair. */
-        public function copyToVector(target:Vector.<Number>, targetIndex:int=0,
-                                     stride:int=0):void
-        {
-            var numVertices:int = this.numVertices;
-
-            for (var i:int=0; i<numVertices; ++i)
-            {
-                target[targetIndex++] = _coords[i * 2];
-                target[targetIndex++] = _coords[i * 2 + 1];
-                targetIndex += stride;
-            }
-        }
 
         /** Creates a string that contains the values of all included points. */
         public function toString():String

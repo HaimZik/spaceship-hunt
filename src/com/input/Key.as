@@ -1,17 +1,17 @@
 ﻿package com.input
 {
-	import flash.display.Stage;
-	import flash.events.KeyboardEvent;
+	import starling.display.Stage;
+	import starling.events.KeyboardEvent;
 	
 	public class Key
 	{
 		private static var keys:Vector.<Boolean>;
 		
-		public static function init(s:Stage):void
+		public static function init(stage:Stage):void
 		{
-			s.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
-			s.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
-			keys = new Vector.<Boolean>(130);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+			stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
+			keys = new Vector.<Boolean>(130, true);
 		}
 		
 		private static function onKeyDown(e:KeyboardEvent):void
