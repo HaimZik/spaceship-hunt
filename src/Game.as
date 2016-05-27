@@ -7,7 +7,6 @@ package
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
 	import flash.ui.Keyboard;
-	import flash.utils.getTimer;
 	import io.arkeus.ouya.ControllerInput;
 	import io.arkeus.ouya.controller.Xbox360Controller;
 	import nape.geom.Vec2;
@@ -64,13 +63,8 @@ package
 				gameEnvironment = new Environment(this);
 			}
 			Starling.current.start();
-			gameEnvironment.enqueueLevel("Level1");
 			drawJoystick();
-			gameEnvironment.startLoading(onFinishLoadingInfo);
-		}
-		
-		private function onFinishLoadingInfo():void
-		{
+			gameEnvironment.enqueueLevel("Level1");
 			var atlaseNum:int = 1;
 			for (var i:int = 0; i < atlaseNum; i++)
 			{
@@ -134,7 +128,7 @@ package
 		private function drawJoystick():void
 		{
 			joystick = new Sprite();
-			joystickRadios = Math.min(500, Starling.current.stage.stageWidth, Starling.current.stage.stageHeight) / 4;
+			joystickRadios = Math.min(550, Starling.current.stage.stageWidth, Starling.current.stage.stageHeight) / 4;
 			var joystickShape:Polygon = Polygon.createCircle(0, 0, joystickRadios);
 			joystickPosition = new Point(joystickRadios * 2 + 20, Starling.current.stage.stageHeight - 15);
 			var vertices:VertexData = new VertexData(null, joystickShape.numVertices);
@@ -217,16 +211,19 @@ package
 //-----------------------------------------------------------------------------------------------------------------------------------------
 		//runtime functions
 		
-		private function enterFrame(event:EnterFrameEvent):void
+		private function enterFrame(event:EnterFrameEvent, passedTime:Number):void
 		{
 			//Starling.current.juggler.advanceTime(event.passedTime);
-			gameEnvironment.updatePhysics(event.passedTime);
-			if(CONFIG::mobile==false)
+			//if (event.passedTime > 0.010)
+			//{
+			gameEnvironment.updatePhysics(passedTime);
+			if (CONFIG::mobile == false)
 			{
 				handleKeyboardInput();
 			}
 			moveCam();
 			handleJoystickInput();
+			//}
 		}
 		
 		private function moveCam():void

@@ -40,12 +40,13 @@ package com.spaceshiptHunt.level
 	public class Environment
 	{
 		public var mainDisplay:Sprite;
-		public var meshNeedsUpdate:Boolean=true;
+		public var meshNeedsUpdate:Boolean = true;
 		public var assetsLoader:AssetManager;
 		public var navMesh:DDLSMesh;
 		public var physicsSpace:Space;
 		public var pathfinder:DDLSPathFinder;
 		public var light:LightSource;
+		public var currentLevel:String;
 		protected var lastNavMeshUpdate:Number;
 		protected var commandQueue:Vector.<Function>;
 		protected var navBody:DDLSObject;
@@ -111,44 +112,68 @@ package com.spaceshiptHunt.level
 		
 		public function enqueueLevel(levelName:String):void
 		{
-			var level:Object = JSON.parse(new LevelInfo[levelName]());
-			for (var i:int = 0; i < level.entities.length; i++)
+			currentLevel = levelName;
+			var level:Object = JSON.parse(new LevelInfo[currentLevel]());
+			for (var k:String in level)
 			{
-				enqueueBody(level.entities[i]);
+				enqueueBody(k, level[k]);
 			}
 		}
 		
-		public function enqueueBody(fileInfo:Object):void
+		public function enqueueBody(fileName:String, fileInfo:Object):void
 		{
-			var infoFileName:String = assetsLoader.enqueueWithName("physicsBodies/" + fileInfo.fileName + "/Info.json", fileInfo.fileName + "Info");
-			commandQueue.push(function onFinish():void
+			var infoFileName:String = assetsLoader.enqueueWithName("physicsBodies/" + fileName + "/Info.json", fileName + "Info");
+			var meshFileName:String;
+			CONFIG::debug
 			{
-				var bodyDescription:Object = assetsLoader.getObject(infoFileName);
-				var meshFileName:String;
-				if (bodyDescription.type == "Static")
+				if (fileName.indexOf("static") != -1)
 				{
-					CONFIG::debug
-					{
-						meshFileName = assetsLoader.enqueueWithName("devPhysicsBodies/" + fileInfo.fileName + "/Mesh.json", fileInfo.fileName + "Mesh");
-					}
-					CONFIG::release
-					{
-						meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + fileInfo.fileName + "/Mesh.json", fileInfo.fileName + "Mesh");
-					}
+					meshFileName = assetsLoader.enqueueWithName("devPhysicsBodies/" + fileName + "/Mesh.json", fileName + "Mesh");
 				}
 				else
 				{
-					meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + fileInfo.fileName + "/Mesh.json", fileInfo.fileName + "Mesh");
+					meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + fileName + "/Mesh.json", fileName + "Mesh");
 				}
-				commandQueue.push(function onFinish():void
+			}
+			CONFIG::release
+			{
+				meshFileName = assetsLoader.enqueueWithName("physicsBodies/" + fileName + "/Mesh.json", fileName + "Mesh");
+			}
+			commandQueue.push(function onFinish():void
+			{
+				var bodyDescription:Object = assetsLoader.getObject(infoFileName);
+				var polygonArray:Array=assetsLoader.getObject(meshFileName) as Array;
+				if (fileName.indexOf("static") != -1)
 				{
-					var polygonArray:Array = assetsLoader.getObject(meshFileName) as Array;
-					if (bodyDescription.type != "Static")
-					{
-						var EntityType:Class = LevelInfo.entityTypes["com.spaceshiptHunt.entities::" + bodyDescription.type];
-						for (var i:int = 0; i < fileInfo.cords.length; i++)
+						var texture:Texture = assetsLoader.getTexture(bodyDescription.textureName);
+						var normalMap:Texture = assetsLoader.getTexture(bodyDescription.textureName + "_n");
+						var body:Body = new Body(BodyType.STATIC);
+						asteroidField = new Sprite();
+						for (var k:int = 0; k < polygonArray.length; k++)
 						{
-							var bodyInfo:Entity = new EntityType(new Vec2(fileInfo.cords[i], fileInfo.cords[++i]));
+							addMesh(polygonArray[k], body);
+							drawMesh(asteroidField, new starling.geom.Polygon(polygonArray[k]), texture, normalMap);
+						}
+						mainDisplay.addChild(asteroidField);
+						physicsSpace.bodies.add(body);
+				}
+				else
+				{
+						var EntityType:Class = LevelInfo.entityTypes["com.spaceshiptHunt.entities::" + bodyDescription.type];
+						for (var i:int = 0; i < fileInfo.cordsX.length; i++)
+						{
+							var bodyInfo:Entity
+							if (EntityType == Player)
+							{
+								bodyInfo = Player.current;
+								bodyInfo.body.position.x = fileInfo.cordsX[i];
+								bodyInfo.body.position.y = fileInfo.cordsY[i];
+							}
+							else
+							{
+								bodyInfo = new EntityType(new Vec2(fileInfo.cordsX[i], fileInfo.cordsY[i]));
+							}
+							bodyInfo.infoFileName = fileName;
 							mainDisplay.addChild(bodyInfo.graphics);
 							for (var j:int = 0; j < polygonArray.length; j++)
 							{
@@ -162,23 +187,7 @@ package com.spaceshiptHunt.level
 							}
 							physicsSpace.bodies.add(bodyInfo.body);
 						}
-					}
-					else
-					{
-						var texture:Texture = assetsLoader.getTexture(bodyDescription.textureName);
-						var normalMap:Texture = assetsLoader.getTexture(bodyDescription.textureName + "_n");
-						var body:Body = new Body(BodyType.STATIC);
-						asteroidField = new Sprite();
-						for (var k:int = 0; k < polygonArray.length; k++)
-						{
-							addMesh(polygonArray[k], body);
-							drawMesh(mainDisplay.addChild(asteroidField) as DisplayObjectContainer, new starling.geom.Polygon(polygonArray[k]), texture, normalMap);
-						}
-						physicsSpace.bodies.add(body);
-					}
-					assetsLoader.removeObject(meshFileName);
-					assetsLoader.removeObject(infoFileName);
-				})
+				}
 			});
 		}
 		

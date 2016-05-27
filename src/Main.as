@@ -29,6 +29,7 @@ package
 			this.stage.align = StageAlign.TOP_LEFT;
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			gameEngine = new Starling(Game, stage, null, null, "auto", "baselineExtended");
+			//gameEngine.skipUnchangedFrames = true;
 			gameEngine.antiAliasing = 4;
 			gameEngine.showStats = true;
 		}

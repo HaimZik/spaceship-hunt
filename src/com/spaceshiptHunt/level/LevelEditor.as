@@ -5,10 +5,10 @@ package com.spaceshiptHunt.level
 	import com.spaceshiptHunt.entities.BodyInfo;
 	import com.spaceshiptHunt.entities.Player;
 	import com.spaceshiptHunt.level.Environment;
+	import flash.events.Event;
 	import flash.geom.Point;
 	import nape.geom.GeomPoly;
 	import nape.geom.GeomPolyList;
-	import nape.geom.Mat23;
 	import nape.geom.Vec2;
 	import nape.geom.Winding;
 	import nape.phys.Body;
@@ -53,7 +53,6 @@ package com.spaceshiptHunt.level
 		private var navShape:Vector.<DDLSObject>;
 		private var napeDebug:ShapeDebug;
 		private var nevMeshView:DDLSSimpleView;
-		private var projectLocation:String = "C:/files/programing/as3Projects/spaceship hunt/bin/"; //app:/
 		
 		public function LevelEditor(mainSprite:Sprite)
 		{
@@ -67,7 +66,7 @@ package com.spaceshiptHunt.level
 			nevMeshView = new DDLSSimpleView();
 			nevMeshView.surface.mouseEnabled = false;
 			//Starling.current.nativeOverlay.addChild(napeDebug.display);
-			//Starling.current.nativeOverlay.addChild(nevMeshView.surface);
+			Starling.current.nativeOverlay.addChild(nevMeshView.surface);
 		}
 		
 		override public function updatePhysics(passedTime:Number):void
@@ -95,11 +94,8 @@ package com.spaceshiptHunt.level
 			super.enqueueLevel(levelName);
 			commandQueue.push(function addCommand():void
 			{
-				commandQueue.push(function onLoadFinish():void
-				{
 					mainDisplay.addChild(verticesDisplay);
-				})
-			})
+			});
 		}
 		
 		CONFIG::air public static function imageToMesh(image:BitmapData):Vector.<Vector.<int>>
@@ -130,19 +126,52 @@ package com.spaceshiptHunt.level
 			return data;
 		}
 		
-		CONFIG::air public function saveFile(relativePath:String, data:String):void
+		CONFIG::air public function saveFile(path:String, data:String, rootFile:String = null):void
 		{
-			var file:File = new File(projectLocation + relativePath);
+			var file:File;
+			if (rootFile)
+			{
+				file = new File(rootFile + path);
+			}
+			else
+			{
+				file = new File(File.applicationDirectory.resolvePath(path).nativePath);
+			}
 			var fileStream:FileStream = new FileStream();
-			fileStream.open(file, FileMode.WRITE);
+			fileStream.addEventListener(Event.CLOSE, fileSaved);
+			fileStream.openAsync(file, FileMode.WRITE);
 			fileStream.writeUTFBytes(data);
 			fileStream.close();
 		}
 		
+		private function fileSaved(e:Event):void
+		{
+			trace("saved");
+		}
+		
 		CONFIG::air public function saveLevel():void
 		{
-			var levelInfo:Object = { name:"level1",type:"Static",textureName:"concrete_baked" };
-			saveAsteroidField(levelInfo);
+			saveAsteroidField({type: "Static", textureName: "concrete_baked"});
+			var levelData:Object = new Object();
+			var infoFileName:String;
+			for (var i:int = 0; i < BodyInfo.list.length; i++)
+			{
+				infoFileName = BodyInfo.list[i].infoFileName;
+				if (infoFileName)
+				{
+					if (!levelData[infoFileName])
+					{
+						levelData[infoFileName] = new Object();
+						levelData[infoFileName].cordsX = new Vector.<int>();
+						levelData[infoFileName].cordsY = new Vector.<int>();
+					}
+					var typeArray:Object = levelData[infoFileName];
+					(typeArray.cordsX as Vector.<int>).push(BodyInfo.list[i].body.position.x);
+					(typeArray.cordsY as Vector.<int>).push(BodyInfo.list[i].body.position.y);
+				}
+			}
+			levelData["levelSpecific/" + currentLevel + "/static/asteroidField"] = new Object();
+			saveFile(currentLevel + ".json", JSON.stringify(levelData), "C:/files/programing/as3Projects/spaceship hunt/src/com/spaceshiptHunt/level/");
 		}
 		
 		CONFIG::air public function saveAsteroidField(bodyInfo:Object):void
@@ -151,9 +180,9 @@ package com.spaceshiptHunt.level
 			var meshDevData:String = "[[" + getDevMesh().join("],[") + "]]";
 			if (meshData.length > 7)
 			{
-				saveFile("physicsBodies/" + bodyInfo.name + "/asteroidField/Mesh.json", meshData);
-				saveFile("devPhysicsBodies/" + bodyInfo.name + "/asteroidField/Mesh.json", meshDevData);
-				saveFile("physicsBodies/" + bodyInfo.name + "/asteroidField/Info.json", JSON.stringify(bodyInfo));
+				saveFile("physicsBodies/levelSpecific/" + currentLevel + "/static/asteroidField/Mesh.json", meshData);
+				saveFile("devPhysicsBodies/levelSpecific/" + currentLevel + "/static/asteroidField/Mesh.json", meshDevData);
+				saveFile("physicsBodies/levelSpecific/" + currentLevel + "/static/asteroidField/Info.json", JSON.stringify(bodyInfo));
 			}
 		}
 		
@@ -279,15 +308,9 @@ package com.spaceshiptHunt.level
 							}
 						}
 					}
-					else
+					else if (i != obstacle.length && i != -1 && currentPoly.numVertices > 2)
 					{
-						if (i != obstacle.length && i != -1)
-						{
-							if (currentPoly.numVertices > 2)
-							{
-								lastObstacleIndex = i;
-							}
-						}
+						lastObstacleIndex = i;
 					}
 				}
 				else
@@ -393,7 +416,6 @@ package com.spaceshiptHunt.level
 					}
 					obstacleBody[lastObstacleIndex].shapes.clear();
 					var convex:GeomPolyList = shape.convexDecomposition();
-					shape.dispose();
 					while (!convex.empty())
 					{
 						obstacleBody[lastObstacleIndex].shapes.add(new nape.shape.Polygon(convex.pop()));
@@ -410,11 +432,8 @@ package com.spaceshiptHunt.level
 					navMeshCords[navMeshCords.length - 1] = navMeshCords[1];
 					navShape[lastObstacleIndex].coordinates = navMeshCords;
 					obstacleDisplay[lastObstacleIndex].clear();
-					//obstacleDisplay[lastObstacleIndex].drawPolygon(currentPoly);
-					//obstacleDisplay[lastObstacleIndex].removeChildren();
 					super.drawMesh(obstacleDisplay[lastObstacleIndex], currentPoly, assetsLoader.getTexture("concrete_baked"), assetsLoader.getTexture("concrete_baked_n"));
 					drawVertices(Color.BLUE);
-					//an hack to let know the navMesh it needs to update
 					Environment.current.meshNeedsUpdate = true;
 				}
 				else
@@ -425,6 +444,7 @@ package com.spaceshiptHunt.level
 					obstacleDisplay[lastObstacleIndex].endFill();
 					drawVertices(Color.RED);
 				}
+				shape.dispose();
 			}
 			else
 			{

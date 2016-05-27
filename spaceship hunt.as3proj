@@ -8,11 +8,11 @@
     <movie fps="60" />
     <movie width="1500" />
     <movie height="980" />
-    <movie version="20" />
+    <movie version="21" />
     <movie minorVersion="0" />
     <movie platform="AIR" />
     <movie background="#000000" />
-    <movie preferredSDK="AIR 20.0.0;20.0.0;" />
+    <movie preferredSDK="Flex 4.6.0, AIR 21.0;4.6.0, 21.0;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -87,11 +87,11 @@
   <options>
     <option showHiddenPaths="True" />
     <option testMovie="OpenDocument" />
-    <option testMovieCommand="bat\RunApp.bat" />
+    <option testMovieCommand="bat\LaunchApp.bat" />
   </options>
   <!-- Plugin storage -->
   <storage>
-    <entry key="at_enabled"><![CDATA[0]]></entry>
+    <entry key="at_enabled"><![CDATA[1]]></entry>
     <entry key="at_password"><![CDATA[]]></entry>
   </storage>
 </project>
