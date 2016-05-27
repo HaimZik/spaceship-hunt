@@ -1,3 +1,1 @@
-{
-"entities":[{"fileName":"player","cords":[5200,4720]},{"fileName":"batship","cords":[4900,4700]},{"fileName":"level1/asteroidField"}]
-}
+{"levelSpecific/level1/static/asteroidField":{},"player":{"cordsX":[4657],"cordsY":[5206]},"batship":{"cordsX":[4431],"cordsY":[4306]}}

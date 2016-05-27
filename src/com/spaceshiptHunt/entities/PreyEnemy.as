@@ -9,6 +9,8 @@ package com.spaceshiptHunt.entities
 	import nape.geom.Vec2;
 	import starling.core.Starling;
 	import starling.display.DisplayObject;
+	import starling.display.Image;
+	import starling.display.Sprite;
 	import starling.utils.deg2rad;
 	
 	/**
@@ -24,6 +26,7 @@ package com.spaceshiptHunt.entities
 		protected var rayList:RayResultList;
 		protected static var rayFilter:InteractionFilter = new InteractionFilter(2, -1);
 		private var pathCheckTime:int;
+		protected var pointingArrow:Image;
 		
 		public function PreyEnemy(position:Vec2)
 		{
@@ -41,12 +44,9 @@ package com.spaceshiptHunt.entities
 				body.shapes.at(i).filter.collisionMask = ~2;
 			}
 			rayPool = Ray.fromSegment(this.body.position, Player.current.body.position);
-		}
-		
-		override protected function updateGraphics():void
-		{
-			super.updateGraphics();
-			followPath();
+			pointingArrow = new Image(Environment.current.assetsLoader.getTexture("arrow"));
+			var mainDisplay:Sprite = Environment.current.mainDisplay;
+			mainDisplay.addChildAt(pointingArrow, mainDisplay.getChildIndex(graphics) - 1);
 		}
 		
 		public function followPath():void
@@ -95,7 +95,12 @@ package com.spaceshiptHunt.entities
 					}
 					else
 					{
-						nextPointPos.length = maxAcceleration * Math.sqrt(nextPointPos.length / 3.5 + 60) / 6;
+						var impulseForce:Number = maxAcceleration * Math.sqrt(nextPointPos.length / 3.5 + 60) / 6;
+						if (Environment.current.meshNeedsUpdate)
+						{
+							impulseForce /= 2;
+						}
+						nextPointPos.length = impulseForce;
 						body.applyImpulse(nextPointPos);
 					}
 				}
@@ -105,13 +110,10 @@ package com.spaceshiptHunt.entities
 				}
 				nextPointPos.dispose();
 			}
-			else
-			{
-				//if (canViewPlayer)
-				//{
-				//hide();
-				//}
-			}
+			//else if (canViewPlayer)
+			//{
+			//hide();
+			//}
 		}
 		
 		private function isPlayerVisible():Boolean
@@ -134,12 +136,31 @@ package com.spaceshiptHunt.entities
 			return false;
 		}
 		
+		private function updateArrow():void 
+		{
+			var distanceVec:Vec2 = Player.current.body.position.sub(body.position, true);
+			distanceVec.length /= -10;
+			if (distanceVec.length > 120)
+			{
+				pointingArrow.x = Player.current.graphics.x + distanceVec.x;
+				pointingArrow.y = Player.current.graphics.y + distanceVec.y;
+				pointingArrow.rotation = distanceVec.angle + Math.PI / 2;
+				pointingArrow.visible = true;
+			}
+			else
+			{
+				pointingArrow.visible = false;
+			}
+			distanceVec.dispose();
+		}
+		
 		public override function update():void
 		{
 			super.update();
 			if (Starling.juggler.elapsedTime % 2 < 1)
 			{
 				canViewPlayer = isPlayerVisible();
+				pointingArrow.visible = !canViewPlayer;
 			}
 			if (!Environment.current.meshNeedsUpdate)
 			{
@@ -175,6 +196,8 @@ package com.spaceshiptHunt.entities
 					graphics.alpha -= 0.005;
 				}
 			}
+			followPath();
+			updateArrow();
 		}
 		
 		public function hide(angle:Number = 0):void

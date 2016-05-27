@@ -12,9 +12,10 @@ package com.spaceshiptHunt.entities
 	
 	public class BodyInfo
 	{
+		public static var list:Vector.<BodyInfo> = new Vector.<BodyInfo>();
 		public var body:Body;
 		public var graphics:DisplayObject;
-		public static var list:Vector.<BodyInfo> = new Vector.<BodyInfo>();
+		public var infoFileName:String;
 		
 		public function BodyInfo(position:Vec2)
 		{
@@ -27,6 +28,10 @@ package com.spaceshiptHunt.entities
 			graphics.x = body.position.x;
 			graphics.y = body.position.y;
 			graphics.rotation = body.rotation;
+		}
+		
+		public function init(bodyDescription:Object):void
+		{
 		}
 		
 		public function update():void

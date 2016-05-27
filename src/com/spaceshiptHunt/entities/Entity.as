@@ -7,7 +7,6 @@ package com.spaceshiptHunt.entities
 	import DDLS.ai.DDLSEntityAI;
 	import com.spaceshiptHunt.level.Environment;
 	import nape.geom.Vec2;
-	import starling.display.DisplayObject;
 	import starling.display.DisplayObjectContainer;
 	import starling.display.Image;
 	import starling.display.Sprite;
@@ -28,13 +27,13 @@ package com.spaceshiptHunt.entities
 			graphics = new Sprite();
 		}
 		
-		public function init(bodyDescription:Object):void
+		override public function init(bodyDescription:Object):void
 		{
 			var child:Image;
 			for (var i:int = 0; i < bodyDescription.children.length; i++)
 			{
-				child = new Image(Environment.current.assetsLoader.getTexture(bodyDescription.children[i].imageName));
-				var normalMap:Texture = Environment.current.assetsLoader.getTexture(bodyDescription.children[i].imageName + "_n");
+				child = new Image(Environment.current.assetsLoader.getTexture(bodyDescription.children[i].textureName));
+				var normalMap:Texture = Environment.current.assetsLoader.getTexture(bodyDescription.children[i].textureName + "_n");
 				var lightStyle:LightStyle = new LightStyle(normalMap);
 				lightStyle.light = Environment.current.light;
 				child.style = lightStyle;

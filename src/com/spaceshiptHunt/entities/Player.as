@@ -11,15 +11,20 @@ package com.spaceshiptHunt.entities
 	{
 		public var leftImpulse:Vec2;
 		public var rightImpulse:Vec2;
-		public static var current:Player;
+		private static var _current:Player=new Player(new Vec2());
 		
 		public function Player(position:Vec2)
 		{
-			current = this;
+			//normale should be called by Player.current
 			super(position);
 			rightImpulse = Vec2.get(0, 0);
 			leftImpulse = Vec2.get(0, 0);
 			weaponsPlacement["fireCannon"] = Vec2.get(16, -37);
+		}
+		
+		static public function get current():Player
+		{
+			return _current;
 		}
 		
 		override public function init(bodyDescription:Object):void
@@ -50,10 +55,10 @@ package com.spaceshiptHunt.entities
 				body.applyImpulse(rightImpulse.rotate(body.rotation), enginePositionR);
 				rightImpulse.setxy(0, 0);
 			}
-			if (body.velocity.length > 500)
-			{
-				body.velocity.length = 500;
-			}
+			//if (body.velocity.length > 500)
+			//{
+				//body.velocity.length = 500;
+			//}
 		}
 	
 	}
