@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<title>spaceship Hunter</title>
+	<meta name="description" content="" />
+	
+	<script src="js/swfobject.js"></script>
+	<script>
+		var flashvars = {
+		};
+		var params = {
+			menu: "false",
+			scale: "noScale",
+			allowFullscreen: "true",
+			allowScriptAccess: "always",
+			bgcolor: "",
+			wmode: "direct" 
+		};
+		var attributes = {
+			id:"spaceshipHunt"
+		}
+		var e;
+		function swfLoadEvent(fn) {
+		    //Ensure fn is a valid function
+		    if (typeof fn !== "function") { return false; }
+		    //This timeout ensures we don't try to access PercentLoaded too soon
+		    var initialTimeout = setTimeout(function () {
+		        //Ensure Flash Player's PercentLoaded method is available and returns a value
+		        if (typeof e.ref.PercentLoaded !== "undefined" && e.ref.PercentLoaded()) {
+		            var loadCheckInterval = setInterval(function () {
+		                if (e.ref.PercentLoaded() === 100) {
+		                    fn();
+		                    clearInterval(loadCheckInterval);
+		                }
+		            }, 1000);
+		        }
+		    }, 200);
+		} var e = null;
+		var callback = function (ev) {
+		    //Only execute if SWFObject embed was successful
+		    if (!ev.success || !ev.ref) { return false; }
+		    e = ev;
+		    swfLoadEvent(function () {
+		        //Put your code here
+		            document.getElementById("spaceshipHunt").focus();
+		            document.getElementById("loadMes").parentNode.removeChild(document.getElementById("loadMes"));
+		    });
+
+		};
+		swfobject.embedSWF(
+			"spaceshipHunt.swf?vir=0.4","altContent", "100%", "100%", "20.0.0", 
+			"expressInstall.swf", 
+			flashvars, params, attributes,callback);
+
+	</script>
+	<style>
+		html, body { height:100%; overflow:hidden; }
+		body { margin:0; }
+	</style>
+</head>
+<body>
+    <div id="loadMes">loading....</div>
+	<div id="altContent">
+		<h1>spaceship Hunt</h1>
+		<p><a href="http://www.adobe.com/go/getflashplayer">Get Adobe Flash player</a></p>
+	</div>
+</body>
+</html>

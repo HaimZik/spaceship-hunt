@@ -1,5 +1,6 @@
 package
 {
+	import flash.desktop.NativeApplication;
 	import flash.display.Sprite;
 	import flash.display.StageAlign;
 	import flash.display.StageScaleMode;
@@ -27,11 +28,21 @@ package
 			Starling.multitouchEnabled = true;
 			this.stage.scaleMode = StageScaleMode.NO_SCALE;
 			this.stage.align = StageAlign.TOP_LEFT;
-			removeEventListener(Event.ADDED_TO_STAGE, init);
 			gameEngine = new Starling(Game, stage, null, null, "auto", "baselineExtended");
-			//gameEngine.skipUnchangedFrames = true;
 			gameEngine.antiAliasing = 4;
-			gameEngine.showStats = true;
+				gameEngine.showStats = true;
+			removeEventListener(Event.ADDED_TO_STAGE, init);
+			stage.addEventListener(Event.ACTIVATE, function(e:Event):void
+			{
+				trace("ACTIVATE");
+				gameEngine.start();
+				gameEngine.render();
+			});
+			stage.addEventListener(Event.DEACTIVATE, function(e:Event):void
+			{
+				trace("DEACTIVATE");
+				gameEngine.stop(true);
+			});
 		}
 	
 	}

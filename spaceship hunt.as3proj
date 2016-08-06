@@ -10,18 +10,18 @@
     <movie height="980" />
     <movie version="21" />
     <movie minorVersion="0" />
-    <movie platform="AIR" />
+    <movie platform="Flash Player" />
     <movie background="#000000" />
-    <movie preferredSDK="Flex 4.6.0, AIR 21.0;4.6.0, 21.0;" />
+    <movie preferredSDK="AIR 21.0.0;21.0.0;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
-    <class path="src" />
+    <class path="dependencies" />
   </classpaths>
   <!-- Build options -->
   <build>
     <option accessible="False" />
-    <option advancedTelemetry="False" />
+    <option advancedTelemetry="True" />
     <option allowSourcePathOverlap="False" />
     <option benchmark="False" />
     <option es="False" />
@@ -53,7 +53,7 @@
   </includeLibraries>
   <!-- SWC Libraries -->
   <libraryPaths>
-    <element path="src\nape\nape-dev.swc" />
+    <element path="dependencies\nape\nape-dev.swc" />
   </libraryPaths>
   <!-- External Libraries -->
   <externalLibraryPaths>
@@ -87,11 +87,11 @@
   <options>
     <option showHiddenPaths="True" />
     <option testMovie="OpenDocument" />
-    <option testMovieCommand="bat\LaunchApp.bat" />
+    <option testMovieCommand="bat/LaunchApp.bat" />
   </options>
   <!-- Plugin storage -->
   <storage>
-    <entry key="at_enabled"><![CDATA[1]]></entry>
+    <entry key="at_enabled"><![CDATA[0]]></entry>
     <entry key="at_password"><![CDATA[]]></entry>
   </storage>
 </project>

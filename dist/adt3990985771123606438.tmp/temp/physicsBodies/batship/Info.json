@@ -1,0 +1,5 @@
+{
+"type":"PreyEnemy",
+"children":[{"textureName":"batship","y":0,"x":0}],
+"engineLocation":{"y":-24,"x":76}
+}
