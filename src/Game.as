@@ -1,8 +1,8 @@
 package
 {
-	import com.input.Key;
-	import com.spaceshiptHunt.entities.Player;
-	import com.spaceshiptHunt.level.Environment;
+	import input.Key;
+	import spaceshiptHunt.entities.Player;
+	import spaceshiptHunt.level.Environment;
 	import flash.geom.Point;
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
@@ -21,7 +21,7 @@ package
 	import starling.utils.Pool;
 	CONFIG::debug
 	{
-		import com.spaceshiptHunt.level.LevelEditor;
+		import spaceshiptHuntDevelopment.level.LevelEditor;
 	}
 	
 	/**
@@ -52,8 +52,10 @@ package
 		
 //-----------------------------------------------------------------------------------------------------------------------------------------
 		//initialization functions		
-		private function init():void
+		public function init():void
 		{
+			//Starling.current.start();
+			//			A fix to black scrren bug 
 			CONFIG::debug
 			{
 				gameEnvironment = new LevelEditor(this);
@@ -62,7 +64,6 @@ package
 			{
 				gameEnvironment = new Environment(this);
 			}
-			Starling.current.start();
 			drawJoystick();
 			gameEnvironment.enqueueLevel("Level1");
 			var atlaseNum:int = 1;
@@ -90,9 +91,9 @@ package
 			ControllerInput.initialize(Starling.current.nativeStage);
 			player = Player.current;
 			stage.addEventListener(KeyboardEvent.KEY_UP, keyUp);
-			addEventListener(Event.ENTER_FRAME, enterFrame);
+			addEventListener(starling.events.Event.ENTER_FRAME, enterFrame);
 			addEventListener(TouchEvent.TOUCH, onTouch);
-			Starling.current.stage.addEventListener(Event.RESIZE, stage_resize);
+			Starling.current.stage.addEventListener(starling.events.Event.RESIZE, stage_resize);
 			Environment.current.assetsLoader.enqueueWithName("audio/Nihilore.mp3", "music");
 			Environment.current.assetsLoader.loadQueue(function onProgress(ratio:Number):void
 			{
@@ -130,7 +131,7 @@ package
 			joystick = new Sprite();
 			joystickRadios = Math.min(550, Starling.current.stage.stageWidth, Starling.current.stage.stageHeight) / 4;
 			var joystickShape:Polygon = Polygon.createCircle(0, 0, joystickRadios);
-			joystickPosition = new Point(joystickRadios * 2 + 20, Starling.current.stage.stageHeight - 15);
+			joystickPosition = new Point(joystickRadios * 2.5, Starling.current.stage.stageHeight - 15);
 			var vertices:VertexData = new VertexData(null, joystickShape.numVertices);
 			joystickShape.copyToVertexData(vertices);
 			var joystickBase:Mesh = new Mesh(vertices, joystickShape.triangulate());

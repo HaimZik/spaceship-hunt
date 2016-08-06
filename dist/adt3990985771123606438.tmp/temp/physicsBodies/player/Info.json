@@ -1,0 +1,5 @@
+{
+"type":"Player",
+"engineLocation":{"x":21,"y":-24},
+"children":[{"textureName":"player","x":0,"y":0}]
+}

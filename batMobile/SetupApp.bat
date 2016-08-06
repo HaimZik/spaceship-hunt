@@ -15,7 +15,7 @@ set AND_CERT_FILE=cert\spaceshipHunt.p12
 set AND_ICONS=icons/android
 
 set AND_SIGNING_OPTIONS=-storetype pkcs12 -keystore "%AND_CERT_FILE%" -storepass %AND_CERT_PASS%
-
+ 
 :: iOS packaging
 set IOS_DIST_CERT_FILE=
 set IOS_DEV_CERT_FILE=
@@ -42,7 +42,7 @@ set DIST_PATH=dist
 set DIST_NAME=spaceshipHunt
 
 :: Debugging using a custom IP
-set DEBUG_IP=
+set DEBUG_IP=192.168.42.219
 
 :validation
 findstr /C:"<id>%APP_ID%</id>" "%APP_XML%" > NUL
