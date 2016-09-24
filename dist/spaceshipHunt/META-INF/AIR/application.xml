@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<application xmlns="http://ns.adobe.com/air/application/21.0">
+<application xmlns="http://ns.adobe.com/air/application/22.0">
   <id>air.spaceshipHuntDev</id>
   <versionNumber>0.21</versionNumber>
   <supportedProfiles>extendedDesktop mobileDevice</supportedProfiles>
@@ -9,6 +9,7 @@
   </name>
   <copyright>© 2016 by Haim Shnitzer.All rights reserved.</copyright>
   <android>
+ <!-- <containsVideo>true</containsVideo>-->
     <manifestAdditions><![CDATA[<manifest android:installLocation="auto">
 	<uses-sdk android:minSdkVersion="8" />
 	<uses-permission android:name="android.permission.INTERNET" />
@@ -40,7 +41,7 @@
     <systemChrome>standard</systemChrome>
     <aspectRatio>landscape</aspectRatio>
     <requestedDisplayResolution>high</requestedDisplayResolution>
-    <depthAndStencil>true</depthAndStencil>
+    <depthAndStencil>false</depthAndStencil>
     <minSize>500 500</minSize>
     <resizable>true</resizable>
     <autoOrients>false</autoOrients>

@@ -23,7 +23,7 @@ package spaceshiptHunt.entities
 		public var canViewPlayer:Boolean = true;
 		protected var rayPool:Ray;
 		protected var rayList:RayResultList;
-		protected static var playerFilter:InteractionFilter = new InteractionFilter(2, -1);
+		protected static const PLAYER_FILTER:InteractionFilter = new InteractionFilter(2, -1);
 		protected var pathCheckTime:int;
 		protected var pointingArrow:Image;
 		protected var currentAction:Function;
@@ -93,7 +93,7 @@ package spaceshiptHunt.entities
 			rayPool = Ray.fromSegment(this.body.position, Player.current.body.position);
 			pointingArrow = new Image(Environment.current.assetsLoader.getTexture("arrow"));
 			var mainDisplay:Sprite = Environment.current.mainDisplay;
-			mainDisplay.addChildAt(pointingArrow, mainDisplay.getChildIndex(graphics) - 1);
+			mainDisplay.addChildAt(pointingArrow,0);
 		}
 		
 		protected function isPlayerVisible():Boolean
@@ -105,7 +105,7 @@ package spaceshiptHunt.entities
 			{
 				return false;
 			}
-			var rayResult:RayResult = body.space.rayCast(rayPool, false, playerFilter);
+			var rayResult:RayResult = body.space.rayCast(rayPool, false, PLAYER_FILTER);
 			if (rayResult.shape.body == Player.current.body)
 			{
 				rayResult.dispose();

@@ -33,16 +33,18 @@ echo.
 
 set PLATFORM=android
 ::set OPTIONS=
-set TARGET=-debug
-set OPTIONS=-connect %DEBUG_IP%
 ::if %C% GTR 3 set PLATFORM=ios
 ::if %C% GTR 7 set PLATFORM=ios-dist
 ::
 ::if "%C%"=="1" set TARGET=
+
 ::if "%C%"=="2" set TARGET=-debug
 ::if "%C%"=="2" set OPTIONS=-connect %DEBUG_IP%
-::if "%C%"=="3" set TARGET=-captive-runtime
-::
+::set TARGET=-debug
+::set OPTIONS=-connect %DEBUG_IP%
+
+::if "%C%"=="3" 
+set TARGET=-captive-runtime
 ::if "%C%"=="4" set TARGET=-test-interpreter
 ::if "%C%"=="5" set TARGET=-debug-interpreter
 ::if "%C%"=="5" set OPTIONS=-connect %DEBUG_IP%

@@ -8,11 +8,11 @@
     <movie fps="60" />
     <movie width="1500" />
     <movie height="980" />
-    <movie version="21" />
+    <movie version="22" />
     <movie minorVersion="0" />
-    <movie platform="Flash Player" />
+    <movie platform="AIR" />
     <movie background="#000000" />
-    <movie preferredSDK="AIR 21.0.0;21.0.0;" />
+    <movie preferredSDK="AIR 22.0.0;22.0.0;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -44,7 +44,7 @@
     <option loadExterns="" />
     <option staticLinkRSL="True" />
     <option additional="" />
-    <option compilerConstants="" />
+    <option compilerConstants="CONFIG::debug" />
     <option minorVersion="" />
   </build>
   <!-- SWC Include Libraries -->

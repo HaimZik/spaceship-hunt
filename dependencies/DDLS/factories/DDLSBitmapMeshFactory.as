@@ -2,15 +2,10 @@ package DDLS.factories
 {
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.graph.DDLSGraph;
-	import DDLS.data.graph.DDLSGraphEdge;
-	import DDLS.data.graph.DDLSGraphNode;
-	import DDLS.data.math.DDLSGeom2D;
 	import DDLS.data.math.DDLSPotrace;
-	
 	import flash.display.BitmapData;
 	import flash.display.Shape;
-	import flash.geom.Point;
-	import flash.utils.Dictionary;
+	
 
 	public class DDLSBitmapMeshFactory
 	{

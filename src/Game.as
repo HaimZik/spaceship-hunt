@@ -1,15 +1,15 @@
 package
 {
-	import input.Key;
-	import spaceshiptHunt.entities.Player;
-	import spaceshiptHunt.level.Environment;
 	import flash.geom.Point;
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
 	import flash.ui.Keyboard;
+	import input.Key;
 	import io.arkeus.ouya.ControllerInput;
 	import io.arkeus.ouya.controller.Xbox360Controller;
 	import nape.geom.Vec2;
+	import spaceshiptHunt.entities.Player;
+	import spaceshiptHunt.level.Environment;
 	import starling.core.Starling;
 	import starling.display.Image;
 	import starling.display.Mesh;
@@ -54,8 +54,6 @@ package
 		//initialization functions		
 		public function init():void
 		{
-			//Starling.current.start();
-			//			A fix to black scrren bug 
 			CONFIG::debug
 			{
 				gameEnvironment = new LevelEditor(this);
@@ -91,9 +89,9 @@ package
 			ControllerInput.initialize(Starling.current.nativeStage);
 			player = Player.current;
 			stage.addEventListener(KeyboardEvent.KEY_UP, keyUp);
-			addEventListener(starling.events.Event.ENTER_FRAME, enterFrame);
+			addEventListener(Event.ENTER_FRAME, enterFrame);
 			addEventListener(TouchEvent.TOUCH, onTouch);
-			Starling.current.stage.addEventListener(starling.events.Event.RESIZE, stage_resize);
+			Starling.current.stage.addEventListener(Event.RESIZE, stage_resize);
 			Environment.current.assetsLoader.enqueueWithName("audio/Nihilore.mp3", "music");
 			Environment.current.assetsLoader.loadQueue(function onProgress(ratio:Number):void
 			{

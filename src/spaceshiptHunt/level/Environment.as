@@ -36,6 +36,7 @@ package spaceshiptHunt.level
 	import starling.textures.Texture;
 	import starling.utils.AssetManager;
 	import starling.utils.Pool;
+	import starling.utils.SystemUtil;
 	
 	public class Environment
 	{
@@ -62,10 +63,15 @@ package spaceshiptHunt.level
 		{
 			currentEnvironment = this;
 			mainDisplay = mainSprite;
-			physicsSpace = new Space(new Vec2(0,0));
+			physicsSpace = new Space(new Vec2(0, 0));
 			physicsSpace.worldAngularDrag = 3.0;
 			physicsSpace.worldLinearDrag = 2;
+			
 			assetsLoader = new AssetManager();
+			if (SystemUtil.isDesktop)
+			{
+				assetsLoader.numConnections = 50;
+			}
 			commandQueue = new Vector.<Function>();
 			navMesh = DDLSRectMeshFactory.buildRectangle(10000, 10000);
 			navBody = new DDLSObject();
@@ -116,11 +122,16 @@ package spaceshiptHunt.level
 		public function enqueueLevel(levelName:String):void
 		{
 			currentLevel = levelName;
-			var level:Object = JSON.parse(new LevelInfo[currentLevel]());
-			for (var entitieType:String in level)
+			var level:Object = JSON.parse(new LevelInfo[currentLevel](), function(k, v):Object
 			{
-				enqueueBody(entitieType, level[entitieType]);
-			}
+				if (isNaN(Number(k)) && !(v is Array))
+					enqueueBody(k, v);
+				return v;
+			});
+			//for (var entitieType:String in level)
+			//{
+			//enqueueBody(entitieType, level[entitieType]);
+			//}
 		}
 		
 		public function enqueueBody(fileName:String, fileInfo:Object):void
@@ -272,7 +283,7 @@ package spaceshiptHunt.level
 		
 		protected function addFireParticle(bodyInfo:Spaceship):void
 		{
-			
+		
 			//if (!particleSystem)
 			//{
 			particleSystem = new PDParticleSystem(XML(new JetFireConfig()), assetsLoader.getTexture("fireball_0"));

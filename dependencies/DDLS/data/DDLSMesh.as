@@ -3,9 +3,7 @@ package DDLS.data
 	import DDLS.data.math.DDLSGeom2D;
 	import DDLS.data.math.DDLSMatrix2D;
 	import DDLS.data.math.DDLSPoint2D;
-	import DDLS.iterators.IteratorFromVertexToIncomingEdges;
 	import DDLS.iterators.IteratorFromVertexToOutgoingEdges;
-	
 	import flash.utils.Dictionary;
 	
 	public class DDLSMesh
@@ -1066,7 +1064,7 @@ package DDLS.data
 					if (index != -1)
 					{
 						edges[index] = eLeft_Center;
-						edges.insertAt(index, eCenter_Right);
+						edges.insertAt(index+1, eCenter_Right);
 					}
 					else
 					{
@@ -1328,8 +1326,7 @@ package DDLS.data
 				
 				// keep infos about reality
 				realA = constrainedEdgeA.leftFace.isReal;
-				realB = constrainedEdgeB.leftFace.isReal;
-				
+					realB = constrainedEdgeB.leftFace.isReal;
 				// we update the segments infos
 				edgeA.fromConstraintSegments.length = constrainedEdgeA.fromConstraintSegments.length;
 				for (var j:int = 0; j < constrainedEdgeA.fromConstraintSegments.length; j++)

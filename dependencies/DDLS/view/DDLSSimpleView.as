@@ -6,14 +6,13 @@ package DDLS.view
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSVertex;
 	import DDLS.iterators.IteratorFromMeshToVertices;
-	import DDLS.iterators.IteratorFromVertexToHoldingFaces;
 	import DDLS.iterators.IteratorFromVertexToIncomingEdges;
-	
 	import flash.display.LineScaleMode;
 	import flash.display.Sprite;
 	import flash.text.TextField;
 	import flash.utils.Dictionary;
-
+	
+	
 	public class DDLSSimpleView
 	{
 		
@@ -74,7 +73,7 @@ package DDLS.view
 			iterEdges = new IteratorFromVertexToIncomingEdges();
 			var dictVerticesDone:Dictionary;
 			dictVerticesDone = new Dictionary();
-			while ( (vertex = iterVertices.next())!=null )
+			while ((vertex = iterVertices.next()) != null)
 			{
 				dictVerticesDone[vertex] = true;
 				if (!vertexIsInsideAABB(vertex, mesh))
@@ -98,9 +97,9 @@ package DDLS.view
 				
 				iterEdges.fromVertex = vertex;
 				incomingEdge = iterEdges.next();
-				while ( incomingEdge)
+				while (incomingEdge)
 				{
-					if (! dictVerticesDone[incomingEdge.originVertex])
+					if (!dictVerticesDone[incomingEdge.originVertex])
 					{
 						if (incomingEdge.isConstrained)
 						{
@@ -118,11 +117,10 @@ package DDLS.view
 					incomingEdge = iterEdges.next();
 				}
 			}
-			
-			
+		
 		}
 		
-		public function drawEntity(entity:DDLSEntityAI, cleanBefore:Boolean=true):void	
+		public function drawEntity(entity:DDLSEntityAI, cleanBefore:Boolean = true):void
 		{
 			if (cleanBefore)
 				_entities.graphics.clear();
@@ -133,13 +131,13 @@ package DDLS.view
 			_entities.graphics.endFill();
 		}
 		
-		public function drawEntities(vEntities:Vector.<DDLSEntityAI>, cleanBefore:Boolean=true):void	
+		public function drawEntities(vEntities:Vector.<DDLSEntityAI>, cleanBefore:Boolean = true):void
 		{
 			if (cleanBefore)
 				_entities.graphics.clear();
 			
 			_entities.graphics.lineStyle(1, 0x00FF00, 0.5, false, LineScaleMode.NONE);
-			for (var i:int=0 ; i<vEntities.length ; i++)
+			for (var i:int = 0; i < vEntities.length; i++)
 			{
 				_entities.graphics.beginFill(0x00FF00, 1);
 				_entities.graphics.drawCircle(vEntities[i].x, vEntities[i].y, vEntities[i].radius);
@@ -147,7 +145,12 @@ package DDLS.view
 			}
 		}
 		
-		public function drawPath(path:Vector.<Number>, cleanBefore:Boolean=true):void
+		public function cleanEntities():void
+		{
+			_entities.graphics.clear();
+		}
+		
+		public function drawPath(path:Vector.<Number>, cleanBefore:Boolean = true):void
 		{
 			if (cleanBefore)
 				_paths.graphics.clear();
@@ -158,8 +161,13 @@ package DDLS.view
 			_paths.graphics.lineStyle(1.5, 0xFF00FF, 0.5, false, LineScaleMode.NONE);
 			
 			_paths.graphics.moveTo(path[0], path[1]);
-			for (var i:int=2 ; i<path.length ; i+=2)
-				_paths.graphics.lineTo(path[i], path[i+1]);
+			for (var i:int = 2; i < path.length; i += 2)
+				_paths.graphics.lineTo(path[i], path[i + 1]);
+		}
+		
+		public function cleanPaths():void
+		{
+			_paths.graphics.clear();
 		}
 		
 		private function vertexIsInsideAABB(vertex:DDLSVertex, mesh:DDLSMesh):Boolean
@@ -169,6 +177,6 @@ package DDLS.view
 			else
 				return true;
 		}
-		
+	
 	}
 }
