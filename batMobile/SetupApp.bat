@@ -10,7 +10,7 @@ cd %~dp0 & cd ..
 
 :: Android packaging
 set AND_CERT_NAME="spaceShipStudent"
-set AND_CERT_PASS=indieDevHunt99
+set AND_CERT_PASS=indieDevHunt999
 set AND_CERT_FILE=cert\spaceshipHunt.p12
 set AND_ICONS=icons/android
 
