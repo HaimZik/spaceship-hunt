@@ -9,6 +9,7 @@ package spaceshiptHuntDevelopment.level
 	import flash.net.URLRequest;
 	import nape.geom.GeomPoly;
 	import nape.geom.GeomPolyList;
+	import nape.geom.Mat23;
 	import nape.geom.Vec2;
 	import nape.geom.Winding;
 	import nape.phys.Body;
@@ -18,7 +19,7 @@ package spaceshiptHuntDevelopment.level
 	import nape.util.ShapeDebug;
 	import spaceshiptHunt.entities.BodyInfo;
 	import spaceshiptHunt.entities.Enemy;
-	import spaceshiptHunt.entities.Player;
+	import spaceshiptHunt.entities.Entity;
 	import spaceshiptHunt.level.Environment;
 	import starling.core.Starling;
 	import starling.display.Canvas;
@@ -57,7 +58,8 @@ package spaceshiptHuntDevelopment.level
 		private var lastObstacleIndex:int = -1;
 		private var navShape:Vector.<DDLSObject>;
 		private var napeDebug:ShapeDebug;
-		private var navMeshView:DDLSSimpleView;
+
+		private var pathfindingDebugView:DDLSSimpleView;
 		CONFIG::air
 		{
 			private var dragEx:DragAndDropArea;
@@ -73,10 +75,10 @@ package spaceshiptHuntDevelopment.level
 			verticesDisplay = new Canvas();
 			var stage:Stage = Starling.current.stage;
 			napeDebug = new ShapeDebug(stage.stageWidth, stage.stageHeight, 0x33333333);
-			navMeshView = new DDLSSimpleView();
-			navMeshView.surface.mouseEnabled = false;
+			pathfindingDebugView = new DDLSSimpleView();
+			pathfindingDebugView.surface.mouseEnabled = false;
 			//Starling.current.nativeOverlay.addChild(napeDebug.display);
-			Starling.current.nativeOverlay.addChild(navMeshView.surface);
+			Starling.current.nativeOverlay.addChild(pathfindingDebugView.surface);
 			CONFIG::air
 			{
 				dragEx = new DragAndDropArea(0, 0, stage.stageWidth, stage.stageHeight, onFileDrop);
@@ -87,7 +89,7 @@ package spaceshiptHuntDevelopment.level
 		override public function updatePhysics(passedTime:Number):void
 		{
 			super.updatePhysics(passedTime);
-			displayDebug();
+			drawDebugGrp();
 		}
 		
 		override public function enqueueLevel(levelName:String):void
@@ -103,22 +105,36 @@ package spaceshiptHuntDevelopment.level
 		{
 			return "[[" + mesh.join("],[") + "]]";
 		}
-		
-		private function displayDebug():void
+
+		private function drawDebugGrp():void
 		{
-			//napeDebug.clear();
-			//napeDebug.draw(Environment.current.physicsSpace);
-			//napeDebug.flush();
-			//napeDebug.transform = Mat23.fromMatrix(mainDisplay.transformationMatrix);
-			navMeshView.drawEntity(Player.current.pathfindingAgent, true);
-			navMeshView.drawMesh(Environment.current.navMesh);
-			navMeshView.surface.transform.matrix = mainDisplay.transformationMatrix;
-			for (var i:int = 0; i < BodyInfo.list.length; i++)
+			if (napeDebug)
 			{
-				//navMeshView.drawEntity((BodyInfo.list[i] as Enemy), true);
-				if (BodyInfo.list[i] is Enemy)
+				napeDebug.clear();
+				napeDebug.draw(Environment.current.physicsSpace);
+				napeDebug.flush();
+				napeDebug.transform = Mat23.fromMatrix(mainDisplay.transformationMatrix);
+			}
+			if (pathfindingDebugView)
+			{
+				pathfindingDebugView.surface.transform.matrix = mainDisplay.transformationMatrix;
+				if (meshNeedsUpdate)
 				{
-					navMeshView.drawPath((BodyInfo.list[i] as Enemy).path);
+					pathfindingDebugView.drawMesh(Environment.current.navMesh);
+				}
+				pathfindingDebugView.cleanPaths();
+				pathfindingDebugView.cleanEntities();
+				for (var i:int = 0; i < BodyInfo.list.length; i++)
+				{
+					if (BodyInfo.list[i] is Entity)
+					{
+						pathfindingDebugView.drawEntity((BodyInfo.list[i] as Entity).pathfindingAgent, false);
+						if (BodyInfo.list[i] is Enemy)
+						{
+							pathfindingDebugView.drawPath((BodyInfo.list[i] as Enemy).path, false);
+						}
+					}
+
 				}
 			}
 		}
@@ -522,6 +538,7 @@ package spaceshiptHuntDevelopment.level
 				var data:String = fs.readUTFBytes(fs.bytesAvailable);
 				trace(data);
 				fs.close();
+
 			}
 			
 			private function dropImage(x:Number, y:Number, file:File):void

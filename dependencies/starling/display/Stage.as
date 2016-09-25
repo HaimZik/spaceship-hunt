@@ -1,4 +1,4 @@
-// =================================================================================================
+// ======
 //
 //	Starling Framework
 //	Copyright Gamua GmbH. All Rights Reserved.
@@ -6,28 +6,28 @@
 //	This program is free software. You can redistribute and/or modify it
 //	in accordance with the terms of the accompanying license agreement.
 //
-// =================================================================================================
+// ======
 
 package starling.display
 {
-    import flash.display.BitmapData;
-    import flash.display3D.Context3D;
-    import flash.errors.IllegalOperationError;
-    import flash.geom.Matrix;
-    import flash.geom.Matrix3D;
-    import flash.geom.Point;
-    import flash.geom.Rectangle;
-    import flash.geom.Vector3D;
+	import flash.display.BitmapData;
+	import flash.display3D.Context3D;
+	import flash.errors.IllegalOperationError;
+	import flash.geom.Matrix;
+	import flash.geom.Matrix3D;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.geom.Vector3D;
+	import starling.core.Starling;
+	import starling.core.starling_internal;
+	import starling.events.EnterFrameEvent;
+	import starling.events.Event;
+	import starling.filters.FragmentFilter;
+	import starling.rendering.Painter;
+	import starling.rendering.RenderState;
+	import starling.utils.MatrixUtil;
+	import starling.utils.RectangleUtil;
 
-    import starling.core.Starling;
-    import starling.core.starling_internal;
-    import starling.events.EnterFrameEvent;
-    import starling.events.Event;
-    import starling.filters.FragmentFilter;
-    import starling.rendering.Painter;
-    import starling.rendering.RenderState;
-    import starling.utils.MatrixUtil;
-    import starling.utils.RectangleUtil;
 
     use namespace starling_internal;
     

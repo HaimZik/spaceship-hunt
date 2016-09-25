@@ -35,21 +35,26 @@ package spaceshiptHunt.entities
 				{
 					graphics.alpha += 0.025;
 				}
+
+
+				if (body.space.timeStamp - playerPathCheckTime > 48)
+				{
+					var behind:Vec2 = Player.current.body.position.sub(body.position);
+					behind.length = _pathfindingAgent.radius + Player.current.pathfindingAgent.radius + 50;
+					behind = Player.current.body.position.sub(behind);
+					Player.current.findPathTo(_playerPredictedPath, behind.x, behind.y);
+					behind.dispose();
+					playerPathCheckTime = body.space.timeStamp;
+				}
+
 			}
 			else if (graphics.alpha > 0.4)
 			{
 				graphics.alpha -= 0.005;
 			}
 			updateArrow();
-			if (body.space.timeStamp - playerPathCheckTime > 48)
-			{
-				var behind:Vec2 = Player.current.body.position.sub(body.position);
-				behind.length = _pathfindingAgent.radius + Player.current.pathfindingAgent.radius + 50;
-				behind = Player.current.body.position.sub(behind);
-				Player.current.findPathTo(_playerPredictedPath, behind.x, behind.y);
-				behind.dispose();
-				playerPathCheckTime = body.space.timeStamp;
-			}
+
+
 		}
 		
 		public function get playerPracticedPath():Vector.<Number>
@@ -75,7 +80,8 @@ package spaceshiptHunt.entities
 				rayPool.direction.rotate(rayAngle);
 			}
 			rayPool.maxDistance = Vec2.distance(Player.current.body.position, body.position) + 2000;
-			body.space.rayMultiCast(rayPool, true, playerFilter, rayList);
+			body.space.rayMultiCast(rayPool, true, PLAYER_FILTER, rayList);
+
 			var rayEnter:RayResult;
 			var rayExit:RayResult;
 			var hidingSpot:Vec2;

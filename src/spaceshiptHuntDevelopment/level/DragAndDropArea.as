@@ -1,9 +1,18 @@
 package spaceshiptHuntDevelopment.level
 {
+
+
+	
+
 	/**
 	 * ...
 	 * @author Haim Shnitzer
 	 */
+
+
+	CONFIG::air
+	{
+
 	import flash.desktop.ClipboardFormats;
 	import flash.desktop.NativeDragManager;
 	import flash.display.Sprite;
@@ -19,17 +28,22 @@ package spaceshiptHuntDevelopment.level
 	public class DragAndDropArea extends Sprite
 	{
 		public var onFileDrop:Function;
-		public function DragAndDropArea(x:int,y:int,width:int,height:int,onFileDrop:Function)
+		
+		public function DragAndDropArea(x:int, y:int, width:int, height:int, onFileDrop:Function)
 		{
-			this.graphics.beginFill(0xff0000,0);
-			this.graphics.drawRect(x,y, width, height);
+			this.graphics.beginFill(0xff0000, 0);
+			this.graphics.drawRect(x, y, width, height);
+
 			this.graphics.endFill();
 			addEventListener(NativeDragEvent.NATIVE_DRAG_ENTER, onDragIn);
 			addEventListener(NativeDragEvent.NATIVE_DRAG_DROP, onDragDrop);
 			this.onFileDrop = onFileDrop;
 		}
 		
+
 		
+
+
 //called when the user drags an item into the component area
 		private function onDragIn(e:NativeDragEvent):void
 		{
@@ -48,6 +62,10 @@ package spaceshiptHuntDevelopment.level
 				}
 			}
 		}
+
+
+		
+
 //called when the user drops an item over the component
 		private function onDragDrop(e:NativeDragEvent):void
 		{
@@ -55,7 +73,10 @@ package spaceshiptHuntDevelopment.level
 			var fileList:Array = e.clipboard.getData(ClipboardFormats.FILE_LIST_FORMAT) as Array;
 			onFileDrop(e.stageX, e.stageY, fileList[0]);
 		}
+
 	
 	}
 
+
+	}
 }

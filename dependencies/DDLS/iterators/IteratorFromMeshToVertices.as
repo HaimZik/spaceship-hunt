@@ -1,6 +1,5 @@
 package DDLS.iterators
 {
-	import DDLS.data.DDLSFace;
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSVertex;
 

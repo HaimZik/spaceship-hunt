@@ -31,22 +31,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package adobe.utils
 {
-	// ===========================================================================
+	// =====
 	//	Imports
 	// ---------------------------------------------------------------------------
 	import flash.display3D.*;
 	import flash.utils.*;
 	
-	// ===========================================================================
+	// =====
 	//	Class
 	// ---------------------------------------------------------------------------
 	public class AGALMiniAssembler
-	{		// ======================================================================
+	{		// 
 		//	Constants
 		// ----------------------------------------------------------------------				
 		protected static const REGEXP_OUTER_SPACES:RegExp		= /^\s+|\s+$/g;
 		
-		// ======================================================================
+		// 
 		//	Properties
 		// ----------------------------------------------------------------------
 		// AGAL bytes and error buffer 
@@ -58,13 +58,13 @@ package adobe.utils
 		private static var initialized:Boolean					= false;
 		public var verbose:Boolean								= false;
 		
-		// ======================================================================
+		// 
 		//	Getters
 		// ----------------------------------------------------------------------
 		public function get error():String						{ return _error; }
 		public function get agalcode():ByteArray				{ return _agalcode; }
 		
-		// ======================================================================
+		// 
 		//	Constructor
 		// ----------------------------------------------------------------------
 		public function AGALMiniAssembler( debugging:Boolean = false ):void
@@ -73,7 +73,7 @@ package adobe.utils
 			if ( !initialized )
 				init();
 		}
-		// ======================================================================
+		// 
 		//	Methods
 		// ----------------------------------------------------------------------
 		
@@ -553,7 +553,7 @@ package adobe.utils
 			SAMPLEMAP[ REPEAT_U_CLAMP_V ]	= new Sampler( REPEAT_U_CLAMP_V, SAMPLER_REPEAT_SHIFT, 3 );
 		}
 		
-		// ======================================================================
+		// 
 		//	Constants
 		// ----------------------------------------------------------------------
 		private static const OPMAP:Dictionary					= new Dictionary();
@@ -676,16 +676,16 @@ package adobe.utils
 	}
 }
 
-// ================================================================================
+// ===
 //	Helper Classes
 // --------------------------------------------------------------------------------
 {
-	// ===========================================================================
+	// =====
 	//	Class
 	// ---------------------------------------------------------------------------
 	class OpCode
 	{		
-		// ======================================================================
+		// 
 		//	Properties
 		// ----------------------------------------------------------------------
 		private var _emitCode:uint;
@@ -693,7 +693,7 @@ package adobe.utils
 		private var _name:String;
 		private var _numRegister:uint;
 		
-		// ======================================================================
+		// 
 		//	Getters
 		// ----------------------------------------------------------------------
 		public function get emitCode():uint		{ return _emitCode; }
@@ -701,7 +701,7 @@ package adobe.utils
 		public function get name():String		{ return _name; }
 		public function get numRegister():uint	{ return _numRegister; }
 		
-		// ======================================================================
+		// 
 		//	Constructor
 		// ----------------------------------------------------------------------
 		public function OpCode( name:String, numRegister:uint, emitCode:uint, flags:uint)
@@ -712,7 +712,7 @@ package adobe.utils
 			_flags = flags;
 		}		
 		
-		// ======================================================================
+		// 
 		//	Methods
 		// ----------------------------------------------------------------------
 		public function toString():String
@@ -721,12 +721,12 @@ package adobe.utils
 		}
 	}
 	
-	// ===========================================================================
+	// =====
 	//	Class
 	// ---------------------------------------------------------------------------
 	class Register
 	{
-		// ======================================================================
+		// 
 		//	Properties
 		// ----------------------------------------------------------------------
 		private var _emitCode:uint;
@@ -735,7 +735,7 @@ package adobe.utils
 		private var _flags:uint;
 		private var _range:uint;
 		
-		// ======================================================================
+		// 
 		//	Getters
 		// ----------------------------------------------------------------------
 		public function get emitCode():uint		{ return _emitCode; }
@@ -744,7 +744,7 @@ package adobe.utils
 		public function get flags():uint		{ return _flags; }
 		public function get range():uint		{ return _range; }
 		
-		// ======================================================================
+		// 
 		//	Constructor
 		// ----------------------------------------------------------------------
 		public function Register( name:String, longName:String, emitCode:uint, range:uint, flags:uint)
@@ -756,7 +756,7 @@ package adobe.utils
 			_flags = flags;
 		}
 		
-		// ======================================================================
+		// 
 		//	Methods
 		// ----------------------------------------------------------------------
 		public function toString():String
@@ -765,26 +765,26 @@ package adobe.utils
 		}
 	}
 	
-	// ===========================================================================
+	// =====
 	//	Class
 	// ---------------------------------------------------------------------------
 	class Sampler
 	{
-		// ======================================================================
+		// 
 		//	Properties
 		// ----------------------------------------------------------------------
 		private var _flag:uint;
 		private var _mask:uint;
 		private var _name:String;
 		
-		// ======================================================================
+		// 
 		//	Getters
 		// ----------------------------------------------------------------------
 		public function get flag():uint		{ return _flag; }
 		public function get mask():uint		{ return _mask; }
 		public function get name():String	{ return _name; }
 		
-		// ======================================================================
+		// 
 		//	Constructor
 		// ----------------------------------------------------------------------
 		public function Sampler( name:String, flag:uint, mask:uint )
@@ -794,7 +794,7 @@ package adobe.utils
 			_mask = mask;
 		}
 		
-		// ======================================================================
+		// 
 		//	Methods
 		// ----------------------------------------------------------------------
 		public function toString():String

@@ -5,8 +5,8 @@ package DDLS.data
 		
 		
 		
-		public static var EPSILON:Number = 0.01;
-		public static var EPSILON_SQUARED:Number = 0.0001;
+		public static const EPSILON:Number = 0.01;
+		public static const EPSILON_SQUARED:Number = 0.0001;
 		
 		
 		

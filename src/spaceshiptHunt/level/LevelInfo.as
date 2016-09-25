@@ -16,7 +16,8 @@ package spaceshiptHunt.level
 		
 		[Embed(source = "level1.json", mimeType = "application/octet-stream")]
 		public static const Level1:Class;
-		
+		[Embed(source = "level1Test.json", mimeType = "application/octet-stream")]
+		public static const Level1Test:Class;
 		   // static initializer
 		{
 			init();
