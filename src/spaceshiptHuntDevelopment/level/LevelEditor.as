@@ -7,6 +7,8 @@ package spaceshiptHuntDevelopment.level
 	import flash.events.Event;
 	import flash.geom.Point;
 	import flash.net.URLRequest;
+	import flash.ui.Keyboard;
+	import input.Key;
 	import nape.geom.GeomPoly;
 	import nape.geom.GeomPolyList;
 	import nape.geom.Mat23;
@@ -18,7 +20,6 @@ package spaceshiptHuntDevelopment.level
 	import nape.shape.Polygon;
 	import nape.util.ShapeDebug;
 	import spaceshiptHunt.entities.BodyInfo;
-	import spaceshiptHunt.entities.Enemy;
 	import spaceshiptHunt.entities.Entity;
 	import spaceshiptHunt.level.Environment;
 	import starling.core.Starling;
@@ -58,7 +59,9 @@ package spaceshiptHuntDevelopment.level
 		private var lastObstacleIndex:int = -1;
 		private var navShape:Vector.<DDLSObject>;
 		private var napeDebug:ShapeDebug;
-		private var pathfindingDebugView:DDLSSimpleView;
+		private var navMeshDebugView:DDLSSimpleView;
+		private var lastViewCenter:Point = new Point(0, 0);
+		private var displayNavMesh:Boolean = true;
 		CONFIG::air
 		{
 			private var dragEx:DragAndDropArea;
@@ -74,10 +77,11 @@ package spaceshiptHuntDevelopment.level
 			verticesDisplay = new Canvas();
 			var stage:Stage = Starling.current.stage;
 			napeDebug = new ShapeDebug(stage.stageWidth, stage.stageHeight, 0x33333333);
-			pathfindingDebugView = new DDLSSimpleView();
-			pathfindingDebugView.surface.mouseEnabled = false;
+			navMeshDebugView = new DDLSSimpleView();
+			navMeshDebugView.surface.mouseEnabled = false;
+			Starling.current.nativeOverlay.addChild(navMeshDebugView.surface);
+			Key.addKeyUpListener(Keyboard.N, disableNavMeshView);
 			//Starling.current.nativeOverlay.addChild(napeDebug.display);
-			Starling.current.nativeOverlay.addChild(pathfindingDebugView.surface);
 			CONFIG::air
 			{
 				dragEx = new DragAndDropArea(0, 0, stage.stageWidth, stage.stageHeight, onFileDrop);
@@ -97,6 +101,7 @@ package spaceshiptHuntDevelopment.level
 			commandQueue.push(function addCommand():void
 			{
 				mainDisplay.addChild(verticesDisplay);
+				drawNavMesh();
 			});
 		}
 		
@@ -114,27 +119,49 @@ package spaceshiptHuntDevelopment.level
 				napeDebug.flush();
 				napeDebug.transform = Mat23.fromMatrix(mainDisplay.transformationMatrix);
 			}
-			if (pathfindingDebugView)
+			if (displayNavMesh)
 			{
-				pathfindingDebugView.surface.transform.matrix = mainDisplay.transformationMatrix;
-				if (meshNeedsUpdate)
+				navMeshDebugView.cleanPaths();
+				navMeshDebugView.cleanEntities();
+				var viewRadius:Number = Math.max(Starling.current.viewPort.width, Starling.current.viewPort.height) / 2;
+				var viewCenter:Point = Pool.getPoint(viewRadius, viewRadius);
+				viewCenter = (navMeshDebugView.surface.globalToLocal(viewCenter));
+				if (Starling.juggler.elapsedTime - lastNavMeshUpdate == 0 || navMeshDebugView.isMeshEndVisable(Environment.current.navMesh, viewCenter.x, viewCenter.y, viewRadius) || Point.distance(viewCenter, lastViewCenter) > viewRadius / 2.1)
 				{
-					pathfindingDebugView.drawMesh(Environment.current.navMesh);
+					lastViewCenter.x = viewCenter.x;
+					lastViewCenter.y = viewCenter.y;
+					navMeshDebugView.cleanMesh();
+					navMeshDebugView.surface.transform.matrix = mainDisplay.transformationMatrix;
+					navMeshDebugView.drawMesh(Environment.current.navMesh, false, viewCenter.x, viewCenter.y, viewRadius);
 				}
-				pathfindingDebugView.cleanPaths();
-				pathfindingDebugView.cleanEntities();
+				else
+				{
+					navMeshDebugView.surface.transform.matrix = mainDisplay.transformationMatrix;
+				}
+				Pool.putPoint(viewCenter);
 				for (var i:int = 0; i < BodyInfo.list.length; i++)
 				{
 					if (BodyInfo.list[i] is Entity)
 					{
-						pathfindingDebugView.drawEntity((BodyInfo.list[i] as Entity).pathfindingAgent, false);
-						if (BodyInfo.list[i] is Enemy)
-						{
-							pathfindingDebugView.drawPath((BodyInfo.list[i] as Enemy).path, false);
-						}
+						(BodyInfo.list[i] as Entity).drawDebug(navMeshDebugView);
 					}
 				}
 			}
+		}
+		
+		protected function disableNavMeshView():void
+		{
+			if (displayNavMesh)
+			{
+				navMeshDebugView.cleanPaths();
+				navMeshDebugView.cleanEntities();
+				navMeshDebugView.cleanMesh();
+			}
+			else
+			{
+				drawNavMesh();
+			}
+			displayNavMesh = !displayNavMesh;
 		}
 		
 		CONFIG::air public function saveFile(path:String, data:String, rootFile:String = null):void
@@ -181,7 +208,7 @@ package spaceshiptHuntDevelopment.level
 				}
 			}
 			levelData["levelSpecific/" + currentLevel + "/static/asteroidField"] = new Object();
-			saveFile(currentLevel + ".json", JSON.stringify(levelData), "C:/files/programing/as3Projects/spaceship hunt/src/com/spaceshiptHunt/level/");
+			saveFile(File.applicationDirectory.resolvePath("").nativePath+"/../src/spaceshiptHunt/level/"+currentLevel + ".json",JSON.stringify(levelData),"");
 		}
 		
 		CONFIG::air public function saveAsteroidField(bodyInfo:Object):void
@@ -340,6 +367,17 @@ package spaceshiptHuntDevelopment.level
 				asteroidField.addChild(obstacleDisplay[lastObstacleIndex]);
 				obstacleBody[lastObstacleIndex].space = physicsSpace;
 			}
+		}
+		
+		protected function drawNavMesh():void
+		{
+			var viewRadius:Number = Math.max(Starling.current.viewPort.width, Starling.current.viewPort.height) / 2;
+			var viewCenter:Point = Pool.getPoint(viewRadius, viewRadius);
+			viewCenter = (navMeshDebugView.surface.globalToLocal(viewCenter));
+			navMeshDebugView.drawMesh(Environment.current.navMesh, true, viewCenter.x, viewCenter.y, viewRadius);
+			lastViewCenter.x = viewCenter.x;
+			lastViewCenter.y = viewCenter.y;
+			Pool.putPoint(viewCenter);
 		}
 		
 		private function getDevMesh():Vector.<Vector.<Number>>

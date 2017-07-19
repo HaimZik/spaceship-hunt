@@ -1,8 +1,10 @@
 package spaceshiptHunt.entities
 {
+	import DDLS.view.DDLSSimpleView;
 	import spaceshiptHunt.level.Environment;
 	import nape.geom.RayResult;
 	import nape.geom.Vec2;
+	import starling.utils.Color;
 	import starling.utils.deg2rad;
 	import spaceshiptHunt.entities.Enemy;
 	
@@ -14,11 +16,13 @@ package spaceshiptHunt.entities
 	{
 		protected var _playerPredictedPath:Vector.<Number>;
 		protected var playerPathCheckTime:int;
+		private static var _current:PreyEnemy;
 		
 		public function PreyEnemy(position:Vec2)
 		{
+			_current = this;
 			super(position);
-			playerPathCheckTime = 0;
+			playerPathCheckTime = -90;
 			_playerPredictedPath = new Vector.<Number>();
 		}
 		
@@ -35,24 +39,44 @@ package spaceshiptHunt.entities
 				{
 					graphics.alpha += 0.025;
 				}
-				if (body.space.timeStamp - playerPathCheckTime > 48)
+				if (body.space.timeStamp - playerPathCheckTime > pathUpdateInterval)
 				{
-					var behind:Vec2 = Player.current.body.position.sub(body.position);
-					behind.length = _pathfindingAgent.radius + Player.current.pathfindingAgent.radius + 50;
-					behind = Player.current.body.position.sub(behind);
-					Player.current.findPathTo(_playerPredictedPath, behind.x, behind.y);
-					behind.dispose();
+					Player.current.findPathToEntity(pathfindingAgent, _playerPredictedPath);
 					playerPathCheckTime = body.space.timeStamp;
 				}
 			}
-			else if (graphics.alpha > 0.4)
+			else
 			{
-				graphics.alpha -= 0.005;
+				if (graphics.alpha > 0.4)
+				{
+					graphics.alpha -= 0.005;
+				}
+				if (body.space.timeStamp - playerPathCheckTime > pathUpdateInterval)
+				{
+					var playerPosX:Number = Player.current.pathfindingAgent.x;
+					var playerPosY:Number = Player.current.pathfindingAgent.y;
+					Player.current.pathfindingAgent.x = lastSeenPlayerPos.x;
+					Player.current.pathfindingAgent.y = lastSeenPlayerPos.y;
+					Player.current.findPathToEntity(pathfindingAgent, _playerPredictedPath);
+					Player.current.pathfindingAgent.x = playerPosX;
+					Player.current.pathfindingAgent.y = playerPosY;
+					playerPathCheckTime = body.space.timeStamp;
+				}
 			}
 			updateArrow();
 		}
 		
-		public function get playerPracticedPath():Vector.<Number>
+		static public function get current():PreyEnemy
+		{
+			return _current;
+		}
+		
+		static public function set current(value:PreyEnemy):void
+		{
+			_current = value;
+		}
+		
+		public function get playerPredictedPath():Vector.<Number>
 		{
 			return _playerPredictedPath;
 		}
@@ -118,19 +142,13 @@ package spaceshiptHunt.entities
 				{
 					hide(-(rayAngle + rayAngle / Math.abs(rayAngle) * deg2rad(15)));
 				}
-			}
-			if (nextPoint == -1)
-			{
-				currentAction = null;
-				if (body.space.timeStamp - pathCheckTime > 48)
+				else
 				{
-					Environment.current.meshNeedsUpdate = true;
-					pathCheckTime = body.space.timeStamp;
+					if (nextPoint == -1)
+					{
+						Environment.current.meshNeedsUpdate = true;
+					}
 				}
-			}
-			else
-			{
-				currentAction = followPath;
 			}
 		}
 		
@@ -150,6 +168,17 @@ package spaceshiptHunt.entities
 				pointingArrow.visible = false;
 			}
 			distanceVec.dispose();
+		}
+		
+		CONFIG::debug
+		{
+			import DDLS.view.DDLSSimpleView;
+			
+			override public function drawDebug(canvas:DDLSSimpleView):void
+			{
+				super.drawDebug(canvas);
+					canvas.drawPath(playerPredictedPath, false, Color.BLUE);
+			}
 		}
 	
 		//end

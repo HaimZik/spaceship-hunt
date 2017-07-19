@@ -15,7 +15,7 @@ package spaceshiptHunt.entities
 		
 		public function Player(position:Vec2)
 		{
-			//normale should be called by Player.current
+			//normally should be called by Player.current
 			super(position);
 			rightImpulse = Vec2.get(0, 0);
 			leftImpulse = Vec2.get(0, 0);
@@ -35,7 +35,7 @@ package spaceshiptHunt.entities
 				body.shapes.at(i).filter.collisionMask = ~4;
 			}
 			this.gunType = "fireCannon";
-			Environment.current.navMesh.insertObject(pathfindingAgent.approximateObject);
+			//Environment.current.navMesh.insertObject(pathfindingAgent.approximateObject);
 		}
 		
 		override public function update():void

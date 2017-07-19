@@ -1,5 +1,6 @@
 package spaceshiptHunt.entities
 {
+	import DDLS.ai.DDLSEntityAI;
 	import spaceshiptHunt.level.Environment;
 	import spaceshiptHunt.entities.Entity;
 	import flash.utils.Dictionary;
@@ -83,10 +84,31 @@ package spaceshiptHunt.entities
 			Starling.juggler.removeByID(shootingCallId);
 		}
 		
-		public function findPathTo(path:Vector.<Number>, x:Number, y:Number):void
+		public function findPathTo(x:Number, y:Number, outPath:Vector.<Number>):void
 		{
-			Environment.current.pathfinder.entity = pathfindingAgent;
-			Environment.current.pathfinder.findPath(x, y, path);
+			Environment.current.findPath(pathfindingAgent, x, y, outPath);
+		}
+		
+		public function findPathToEntity(entity:DDLSEntityAI, outPath:Vector.<Number>):void
+		{
+			var diraction:Vec2 = Vec2.weak(entity.x - _pathfindingAgent.x, entity.y - _pathfindingAgent.y);
+			diraction.length = pathfindingAgent.radius + entity.radius + pathfindingAgentSafeDistance * 2 + 2;
+			findPathTo(entity.x - diraction.x, entity.y - diraction.y, outPath);
+			for (var i:int = 0; i < 3; i++)
+			{
+				if (outPath.length == 0)
+				{
+					diraction.set(diraction.perp(true));
+					findPathTo(entity.x - diraction.x, entity.y - diraction.y, outPath);
+				}
+				else
+				{
+					diraction.dispose();
+					return;
+				}
+			}
+			diraction.dispose();
+			Environment.current.meshNeedsUpdate = true;
 		}
 		
 		protected function shootParticle():void

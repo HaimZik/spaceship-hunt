@@ -4,10 +4,13 @@ package DDLS.data
 	import DDLS.data.math.DDLSMatrix2D;
 	import DDLS.data.math.DDLSPoint2D;
 	import DDLS.iterators.IteratorFromVertexToOutgoingEdges;
+	import flash.geom.Point;
 	import flash.utils.Dictionary;
+	import starling.utils.Pool;
 	
 	public class DDLSMesh
 	{
+		protected var vertexToDelete:Vector.<DDLSVertex>=new Vector.<DDLSVertex>();
 		
 		private static var INC:int = 0;
 		private var _id:int;
@@ -514,13 +517,26 @@ package DDLS.data
 			var done:Boolean;
 			currVertex = vertexDown;
 			currObjet = currVertex;
+			var iterationCount:int = 0;
+			var maxIteration:int = 5000;
 			while (true)
 			{
+				if (iterationCount > maxIteration)
+				{
+					trace("entered infinty loop in insertConstraintSegment");
+					return segment;
+				}
+				iterationCount++;
 				done = false;
 				currVertex = currObjet as DDLSVertex
 				if (currVertex)
 				{
 					//trace("case vertex");
+					if (currVertex.edge == null)
+					{
+					trace("currVertex.edge was null");	
+						return null;
+					}
 					iterVertexToOutEdges.fromVertex = currVertex;
 					currEdge = iterVertexToOutEdges.next();
 					while (currEdge)
@@ -783,11 +799,11 @@ package DDLS.data
 		{
 			//trace("deleteConstraintSegment id", segment.id);
 			var i:int;
-			var vertexToDelete:Vector.<DDLSVertex> = new Vector.<DDLSVertex>();
 			var edge:DDLSEdge;
 			var vertex:DDLSVertex;
-			var fromConstraintSegment:Vector.<DDLSConstraintSegment>;
-			for (i = 0; i < segment.edges.length; i++)
+			var segmentEdgesLength:int = segment.edges.length;
+			vertexToDelete.length = segmentEdgesLength+1;
+			for (i = 0; i < segmentEdgesLength; i++)
 			{
 				edge = segment.edges[i];
 				//trace("unconstrain edge ", edge);
@@ -800,16 +816,16 @@ package DDLS.data
 				
 				vertex = edge.originVertex;
 				vertex.removeFromConstraintSegment(segment);
-				vertexToDelete.push(vertex);
+				vertexToDelete[i]=vertex;
 			}
 			vertex = edge.destinationVertex;
 			vertex.removeFromConstraintSegment(segment);
-			vertexToDelete.push(vertex);
-			
+			vertexToDelete[segmentEdgesLength]=vertex;			
 			//trace("clean the useless vertices");
 			for (i = 0; i < vertexToDelete.length; i++)
 			{
 				deleteVertex(vertexToDelete[i]);
+				vertexToDelete[i] = null;//should be returned to pool here..
 			}
 			//trace("clean done");
 			
@@ -1064,7 +1080,7 @@ package DDLS.data
 					if (index != -1)
 					{
 						edges[index] = eLeft_Center;
-						edges.insertAt(index+1, eCenter_Right);
+						edges.insertAt(index + 1, eCenter_Right);
 					}
 					else
 					{
@@ -1326,7 +1342,7 @@ package DDLS.data
 				
 				// keep infos about reality
 				realA = constrainedEdgeA.leftFace.isReal;
-					realB = constrainedEdgeB.leftFace.isReal;
+				realB = constrainedEdgeB.leftFace.isReal;
 				// we update the segments infos
 				edgeA.fromConstraintSegments.length = constrainedEdgeA.fromConstraintSegments.length;
 				for (var j:int = 0; j < constrainedEdgeA.fromConstraintSegments.length; j++)
@@ -1490,7 +1506,7 @@ package DDLS.data
 				var vertexB:DDLSVertex = baseEdge.destinationVertex;
 				var vertexC:DDLSVertex;
 				var vertexCheck:DDLSVertex;
-				var circumcenter:DDLSPoint2D = new DDLSPoint2D();
+				var circumcenter:Point = Pool.getPoint();
 				var radiusSquared:Number;
 				var distanceSquared:Number;
 				var isDelaunay:Boolean;
@@ -1525,7 +1541,7 @@ package DDLS.data
 							break;
 					}
 				}
-				
+				Pool.putPoint(circumcenter);
 				if (!isDelaunay)
 				{
 					// for perfect regular n-sides polygons, checking delaunay circumcircle condition is not possible

@@ -194,7 +194,7 @@ package starling.extensions
 
             while (particleIndex < _numParticles)
             {
-                particle = _particles[particleIndex] as Particle;
+                particle = _particles[particleIndex];
                 
                 if (particle.currentTime < particle.totalTime)
                 {
@@ -205,7 +205,7 @@ package starling.extensions
                 {
                     if (particleIndex != _numParticles - 1)
                     {
-                        var nextParticle:Particle = _particles[int(_numParticles-1)] as Particle;
+                        var nextParticle:Particle = _particles[int(_numParticles-1)];
                         _particles[int(_numParticles-1)] = particle;
                         _particles[particleIndex] = nextParticle;
                     }
@@ -228,7 +228,7 @@ package starling.extensions
                 {
                     if (_numParticles < maxNumParticles)
                     {
-                        particle = _particles[_numParticles] as Particle;
+                        particle = _particles[_numParticles];
                         initParticle(particle);
                         
                         // particle might be dead at birth
@@ -261,7 +261,7 @@ package starling.extensions
             for (var i:int=0; i<_numParticles; ++i)
             {
                 vertexID = i * 4;
-                particle = _particles[i] as Particle;
+                particle = _particles[i];
                 rotation = particle.rotation;
                 offsetX = pivotX * particle.scale;
                 offsetY = pivotY * particle.scale;

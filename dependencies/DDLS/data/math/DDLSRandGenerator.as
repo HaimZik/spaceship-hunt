@@ -9,7 +9,7 @@ package DDLS.data.math
 		private var _rangeMax:int;
 		
 		private var _numIter:int;
-		private var _tempString:String;
+		//private var _tempString:String;
 		
 		public function DDLSRandGenerator(seed:int=1234, rangeMin:int=0, rangeMax:int=1)
 		{

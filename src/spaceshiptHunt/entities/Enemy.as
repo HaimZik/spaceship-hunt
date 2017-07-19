@@ -2,6 +2,7 @@ package spaceshiptHunt.entities
 {
 	import spaceshiptHunt.level.Environment;
 	import spaceshiptHunt.entities.Spaceship;
+	import spaceshiptHunt.entities.Player;
 	import nape.dynamics.InteractionFilter;
 	import nape.geom.Ray;
 	import nape.geom.RayResult;
@@ -20,7 +21,9 @@ package spaceshiptHunt.entities
 		
 		public var path:Vector.<Number>;
 		public var nextPoint:int = -1;
-		public var canViewPlayer:Boolean = true;
+		public static var lastSeenPlayerPos:Vec2;
+		protected static var enemiesSeePlayerCounter:uint = 0;
+		protected var _canViewPlayer:Boolean = false;
 		protected var rayPool:Ray;
 		protected var rayList:RayResultList;
 		protected static const PLAYER_FILTER:InteractionFilter = new InteractionFilter(2, -1);
@@ -31,9 +34,27 @@ package spaceshiptHunt.entities
 		public function Enemy(position:Vec2)
 		{
 			super(position);
-			pathCheckTime = 0;
+			pathCheckTime = -1000;
 			path = new <Number>[];
 			rayList = new RayResultList();
+			lastSeenPlayerPos = Vec2.get();
+		}
+		
+		override public function update():void
+		{
+			super.update();
+			if (body.space.timeStamp % 61 == 0)
+			{
+				checkPlayerVisible();
+			}
+			if (currentAction)
+			{
+				currentAction();
+			}
+			else
+			{
+				decideNextAction();
+			}
 		}
 		
 		public function isPathBlocked():Boolean
@@ -62,15 +83,23 @@ package spaceshiptHunt.entities
 		
 		public function goTo(x:Number, y:Number):void
 		{
-			findPathTo(path, x, y);
+			findPathTo(x, y, path);
 			if (path.length > 0)
 			{
 				nextPoint = 1;
 				if (isPathBlocked())
 				{
 					nextPoint = -1;
-					pathCheckTime = body.space.timeStamp;
-					Environment.current.meshNeedsUpdate = true;
+					currentAction = null;
+					if (body.space.timeStamp - pathCheckTime > pathUpdateInterval)
+					{
+						Environment.current.meshNeedsUpdate = true;
+						pathCheckTime = body.space.timeStamp;
+					}
+				}
+				else
+				{
+					currentAction = followPath;
 				}
 				if (body.isSleeping)
 				{
@@ -80,6 +109,7 @@ package spaceshiptHunt.entities
 			else
 			{
 				nextPoint = -1;
+				currentAction = null;
 			}
 		}
 		
@@ -93,36 +123,30 @@ package spaceshiptHunt.entities
 			rayPool = Ray.fromSegment(this.body.position, Player.current.body.position);
 			pointingArrow = new Image(Environment.current.assetsLoader.getTexture("arrow"));
 			var mainDisplay:Sprite = Environment.current.mainDisplay;
-			mainDisplay.addChildAt(pointingArrow,0);
+			mainDisplay.addChildAt(pointingArrow, 0);
 		}
 		
-		protected function isPlayerVisible():Boolean
+		protected function checkPlayerVisible():void
 		{
 			rayPool.origin = this.body.position;
 			rayPool.direction.setxy(Player.current.body.position.x - rayPool.origin.x, Player.current.body.position.y - rayPool.origin.y);
 			rayPool.maxDistance = Vec2.distance(this.body.position, Player.current.body.position);
 			if (rayPool.maxDistance > 1300)
 			{
-				return false;
+				canViewPlayer = false;
 			}
-			var rayResult:RayResult = body.space.rayCast(rayPool, false, PLAYER_FILTER);
-			if (rayResult.shape.body == Player.current.body)
+			else
 			{
+				var rayResult:RayResult = body.space.rayCast(rayPool, false, PLAYER_FILTER);
+				canViewPlayer = rayResult.shape.body == Player.current.body;
 				rayResult.dispose();
-				return true;
 			}
-			rayResult.dispose();
-			return false;
 		}
 		
 		protected function entitiesIntersectsLine(startPoint:Vec2, endPoint:Vec2):Boolean
 		{
 			var line:Vec2 = endPoint.subeq(startPoint);
-			var length:int = line.length;
-			if (length == 0)
-			{
-				return false;
-			}
+			var length:Number = line.length;
 			line.muleq(1 / length);
 			var lineLeftNormal:Vec2 = Vec2.get(line.x, line.y).rotate(Math.PI * -0.5);
 			var startToCircle:Vec2 = Vec2.get();
@@ -151,53 +175,6 @@ package spaceshiptHunt.entities
 			lineLeftNormal.dispose();
 			startToCircle.dispose();
 			return false;
-		}
-		
-		protected function closestPointFromLine(startPoint:Vec2, endPoint:Vec2):Vec2
-		{
-			var line:Vec2 = endPoint.subeq(startPoint);
-			var length:int = line.length;
-			if (length == 0)
-			{
-				return Vec2.get();
-			}
-			line.muleq(1 / length);
-			var startToCircle:Vec2 = Vec2.get(pathfindingAgent.x + body.velocity.x - startPoint.x, pathfindingAgent.y + body.velocity.y - startPoint.y);
-			var lineDotCircle:Number = startToCircle.dot(line);
-			if (lineDotCircle < 0)
-			{
-				startToCircle.dispose();
-				return startPoint;
-			}
-			else if (lineDotCircle > length)
-			{
-				startToCircle.dispose();
-				return endPoint;
-			}
-			else
-			{
-				var lineLeftNormal:Vec2 = Vec2.get(line.x, line.y).rotate(Math.PI * -0.5);
-				var perpendicular:Number = startToCircle.dot(lineLeftNormal);
-				lineLeftNormal.dispose();
-				return startToCircle.addeq(Vec2.weak(0, perpendicular)).addeq(startPoint);
-			}
-		}
-		
-		override public function update():void
-		{
-			super.update();
-			if (body.space.timeStamp % 61 == 0)
-			{
-				canViewPlayer = isPlayerVisible();
-			}
-			if (currentAction)
-			{
-				currentAction();
-			}
-			else
-			{
-				decideNextAction();
-			}
 		}
 		
 		protected function decideNextAction():void
@@ -249,7 +226,7 @@ package spaceshiptHunt.entities
 						}
 						nextPointPos.length = impulseForce;
 						body.applyImpulse(nextPointPos);
-						if (!Environment.current.meshNeedsUpdate && body.space.timeStamp - pathCheckTime > 48 && isPathBlocked())
+						if (!Environment.current.meshNeedsUpdate && body.space.timeStamp - pathCheckTime > pathUpdateInterval && isPathBlocked())
 						{
 							Environment.current.meshNeedsUpdate = true;
 							reFindPath();
@@ -275,7 +252,7 @@ package spaceshiptHunt.entities
 		protected function reFindPath():void
 		{
 			pathCheckTime = body.space.timeStamp;
-			findPathTo(path, path[path.length - 2], path.pop());
+			findPathTo(path[path.length - 2], path.pop(), path);
 			if (path.length > 1)
 			{
 				nextPoint = 1;
@@ -283,6 +260,35 @@ package spaceshiptHunt.entities
 			else
 			{
 				nextPoint = -1;
+			}
+		}
+		
+		public function get canViewPlayer():Boolean
+		{
+			return _canViewPlayer;
+		}
+		
+		public function set canViewPlayer(value:Boolean):void
+		{
+			if (_canViewPlayer != value)
+			{
+				enemiesSeePlayerCounter += value ? 1 : -1;
+			}
+			_canViewPlayer = value;
+			if (_canViewPlayer)
+			{
+				lastSeenPlayerPos.set(Player.current.body.position);
+			}
+		}
+		
+		CONFIG::debug
+		{
+			import DDLS.view.DDLSSimpleView;
+			
+			override public function drawDebug(canvas:DDLSSimpleView):void
+			{
+				super.drawDebug(canvas);
+				canvas.drawPath(path, false);
 			}
 		}
 	

@@ -192,6 +192,10 @@ package DDLS.ai
 			// first we skip the first face and first edge if the starting point lies on the first interior edge:
 			if (listEdges[0] == DDLSGeom2D.isInFace(fromX, fromY, listFaces[0]))
 			{
+				if (listEdges.length == 1)
+				{
+					return;
+				}
 				listEdges.shift();
 				listFaces.shift();
 			}

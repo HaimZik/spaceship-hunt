@@ -5,13 +5,15 @@ package DDLS.view
 	import DDLS.data.DDLSFace;
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSVertex;
+	import DDLS.data.math.DDLSPoint2D;
 	import DDLS.iterators.IteratorFromMeshToVertices;
 	import DDLS.iterators.IteratorFromVertexToIncomingEdges;
 	import flash.display.LineScaleMode;
 	import flash.display.Sprite;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	import flash.utils.Dictionary;
-	
 	
 	public class DDLSSimpleView
 	{
@@ -47,20 +49,26 @@ package DDLS.view
 			return _surface;
 		}
 		
-		public function drawMesh(mesh:DDLSMesh):void
+		public function isMeshEndVisable(mesh:DDLSMesh, viewCenterX:Number, viewCenterY, viewRadius:Number):Boolean
 		{
-			_surface.graphics.clear();
-			_edges.graphics.clear();
-			_constraints.graphics.clear();
-			_vertices.graphics.clear();
-			
+			return viewCenterX < viewRadius * 2 || viewCenterX > mesh.width - viewRadius * 2 || viewCenterY < viewRadius * 2 || viewCenterY > mesh.height - viewRadius * 2;
+		}
+		
+		public function drawMesh(mesh:DDLSMesh, cleanBefore:Boolean = true, viewCenterX:Number = 0, viewCenterY = 0, viewRadius:Number = -1):void
+		{
+			if (cleanBefore)
+			{
+				cleanMesh();
+			}
 			while (_vertices.numChildren)
 				_vertices.removeChildAt(0);
-			
-			_surface.graphics.beginFill(0x00, 0);
-			_surface.graphics.lineStyle(1, 0xFF0000, 1, false, LineScaleMode.NONE);
-			_surface.graphics.drawRect(0, 0, mesh.width, mesh.height);
-			_surface.graphics.endFill();
+			if (viewRadius == -1 || isMeshEndVisable(mesh, viewCenterX, viewCenterY, viewRadius))
+			{
+				_surface.graphics.beginFill(0x00, 0);
+				_surface.graphics.lineStyle(1, 0xFF0000, 1, false, LineScaleMode.NONE);
+				_surface.graphics.drawRect(0, 0, mesh.width, mesh.height);
+				_surface.graphics.endFill();
+			}
 			
 			var vertex:DDLSVertex;
 			var incomingEdge:DDLSEdge;
@@ -101,23 +109,34 @@ package DDLS.view
 				{
 					if (!dictVerticesDone[incomingEdge.originVertex])
 					{
-						if (incomingEdge.isConstrained)
+						if (viewRadius == -1 || isLineInView(incomingEdge.originVertex.pos,incomingEdge.destinationVertex.pos,viewCenterX,viewCenterY,viewRadius))
 						{
-							_constraints.graphics.lineStyle(2, 0xFF0000, 1, false, LineScaleMode.NONE);
-							_constraints.graphics.moveTo(incomingEdge.originVertex.pos.x, incomingEdge.originVertex.pos.y);
-							_constraints.graphics.lineTo(incomingEdge.destinationVertex.pos.x, incomingEdge.destinationVertex.pos.y);
-						}
-						else
-						{
-							_edges.graphics.lineStyle(1, 0x999999, 1, false, LineScaleMode.NONE);
-							_edges.graphics.moveTo(incomingEdge.originVertex.pos.x, incomingEdge.originVertex.pos.y);
-							_edges.graphics.lineTo(incomingEdge.destinationVertex.pos.x, incomingEdge.destinationVertex.pos.y);
+							if (incomingEdge.isConstrained)
+							{
+								_constraints.graphics.lineStyle(2, 0xFF0000, 1, false, LineScaleMode.NONE);
+								_constraints.graphics.moveTo(incomingEdge.originVertex.pos.x, incomingEdge.originVertex.pos.y);
+								_constraints.graphics.lineTo(incomingEdge.destinationVertex.pos.x, incomingEdge.destinationVertex.pos.y);
+							}
+							else
+							{
+								_edges.graphics.lineStyle(1, 0x999999, 1, false, LineScaleMode.NONE);
+								_edges.graphics.moveTo(incomingEdge.originVertex.pos.x, incomingEdge.originVertex.pos.y);
+								_edges.graphics.lineTo(incomingEdge.destinationVertex.pos.x, incomingEdge.destinationVertex.pos.y);
+							}
 						}
 					}
 					incomingEdge = iterEdges.next();
 				}
 			}
 		
+		}
+		
+		public function cleanMesh():void
+		{
+			_surface.graphics.clear();
+			_edges.graphics.clear();
+			_constraints.graphics.clear();
+			_vertices.graphics.clear();
 		}
 		
 		public function drawEntity(entity:DDLSEntityAI, cleanBefore:Boolean = true):void
@@ -150,7 +169,7 @@ package DDLS.view
 			_entities.graphics.clear();
 		}
 		
-		public function drawPath(path:Vector.<Number>, cleanBefore:Boolean = true):void
+		public function drawPath(path:Vector.<Number>, cleanBefore:Boolean = true, color:uint = 0xFF00FF):void
 		{
 			if (cleanBefore)
 				_paths.graphics.clear();
@@ -158,7 +177,7 @@ package DDLS.view
 			if (path.length == 0)
 				return;
 			
-			_paths.graphics.lineStyle(1.5, 0xFF00FF, 0.5, false, LineScaleMode.NONE);
+			_paths.graphics.lineStyle(1.5, color, 0.5, false, LineScaleMode.NONE);
 			
 			_paths.graphics.moveTo(path[0], path[1]);
 			for (var i:int = 2; i < path.length; i += 2)
@@ -176,6 +195,14 @@ package DDLS.view
 				return false;
 			else
 				return true;
+		}
+		
+		private function isLineInView(lineStart:DDLSPoint2D,lineEnd:DDLSPoint2D,viewCenterX:Number,viewCenterY:Number,viewRadius:Number):Boolean
+		{
+			var viewRangeSquared:Number = Math.pow(viewRadius * 1.5, 2);
+			var isStartVertexInView:Boolean = Math.pow(viewCenterX - lineStart.x, 2) < viewRangeSquared && Math.abs(viewCenterY - lineStart.y) < viewRangeSquared;
+			var isEndVertexInView:Boolean=Math.pow(viewCenterX - lineEnd.x, 2) < viewRangeSquared && Math.abs(viewCenterY - lineEnd.y) < viewRangeSquared
+			return isStartVertexInView || isEndVertexInView || lineStart.distanceTo(lineEnd)>viewRadius*2;
 		}
 	
 	}
