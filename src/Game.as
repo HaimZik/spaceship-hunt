@@ -4,6 +4,7 @@ package
 	import flash.media.SoundChannel;
 	import flash.media.SoundTransform;
 	import flash.ui.Keyboard;
+	import flash.utils.getTimer;
 	import input.Key;
 	import io.arkeus.ouya.ControllerInput;
 	import io.arkeus.ouya.controller.Xbox360Controller;
@@ -30,7 +31,6 @@ package
 	 */
 	public class Game extends Sprite
 	{
-		
 		private var joystickRadios:Number;
 		private var joystick:Sprite;
 		private var analogStick:Mesh;
@@ -38,12 +38,30 @@ package
 		private var joystickPosition:Point;
 		private var xboxController:Xbox360Controller;
 		private var touches:Vector.<Touch> = new Vector.<Touch>();
-		
 		private var backgroundMusic:SoundChannel;
 		private var volume:Number = 0.08;
 		private var gameEnvironment:Environment;
 		private var background:Image;
 		private var player:Player;
+		
+		//keyboardSetup
+		protected var alternativeFireKey:uint = Keyboard.SPACE;
+		CONFIG::release
+		{
+			protected var fireKey:uint = Keyboard.Z;
+			protected var upKey:uint = Keyboard.UP;
+			protected var downKey:uint = Keyboard.DOWN;
+			protected var rightKey:uint = Keyboard.RIGHT;
+			protected var leftKey:uint = Keyboard.LEFT;
+		}
+		CONFIG::debug
+		{
+			protected var fireKey:uint = Keyboard.NUMPAD_ADD;
+			protected var upKey:uint = Keyboard.W;
+			protected var downKey:uint = Keyboard.S;
+			protected var rightKey:uint = Keyboard.D;
+			protected var leftKey:uint = Keyboard.A;
+		}
 		
 		public function Game()
 		{
@@ -63,7 +81,7 @@ package
 				gameEnvironment = new Environment(this);
 			}
 			drawJoystick();
-			gameEnvironment.enqueueLevel("Level1");
+			gameEnvironment.enqueueLevel("Level1Test");
 			var atlaseNum:int = 1;
 			for (var i:int = 0; i < atlaseNum; i++)
 			{
@@ -73,6 +91,11 @@ package
 			Environment.current.assetsLoader.enqueue("grp/concrete_baked.atf");
 			Environment.current.assetsLoader.enqueue("grp/concrete_baked_n.atf");
 			gameEnvironment.startLoading(onFinishLoading);
+		}
+		
+		public function onFocusReturn():void
+		{
+			Key.reset();
 		}
 		
 		private function onFinishLoading():void
@@ -108,7 +131,7 @@ package
 		
 		private function keyUp(e:KeyboardEvent, keyCode:int):void
 		{
-			if (keyCode == Keyboard.ENTER)
+			if (keyCode == fireKey || keyCode == alternativeFireKey)
 			{
 				player.stopShooting();
 			}
@@ -213,16 +236,16 @@ package
 		private function enterFrame(event:EnterFrameEvent, passedTime:Number):void
 		{
 			//Starling.current.juggler.advanceTime(event.passedTime);
-			//if (event.passedTime > 0.010)
-			//{
-			gameEnvironment.updatePhysics(passedTime);
-			if (CONFIG::mobile == false)
+			if (event.passedTime > 0.010)
 			{
-				handleKeyboardInput();
+				gameEnvironment.updatePhysics(passedTime);
+				if (CONFIG::mobile == false)
+				{
+					handleKeyboardInput();
+				}
+				moveCam();
+				handleJoystickInput();
 			}
-			moveCam();
-			handleJoystickInput();
-			//}
 		}
 		
 		private function moveCam():void
@@ -233,70 +256,70 @@ package
 			var velocity:Vec2 = player.body.velocity.copy(true).rotate(rotation).muleq(0.2);
 			var newScale:Number = 1 - velocity.length * velocity.length / 30000;
 			this.scale += (newScale - this.scale) / 16;
-			var poolPoint:Point = Pool.getPoint(player.body.position.x, player.body.position.y);
-			this.localToGlobal(poolPoint, poolPoint);
-			this.x -= poolPoint.x - velocity.x - stage.stageWidth / 2;
-			this.y -= poolPoint.y - velocity.y - stage.stageHeight * 0.7;
+			var position:Point = Pool.getPoint(player.body.position.x, player.body.position.y);
+			this.localToGlobal(position, position);
+			this.x -= position.x - velocity.x - stage.stageWidth / 2;
+			this.y -= position.y - velocity.y - stage.stageHeight * 0.7;
 			velocity.dispose();
 			var parallaxRatio:Number = 0.5;
 			background.x = player.body.position.x - (player.body.position.x * parallaxRatio) % 512 - background.width / 2;
 			background.y = player.body.position.y - (player.body.position.y * parallaxRatio) % 512 - background.height / 2;
 			
-			this.globalToLocal(joystickPosition, poolPoint);
-			joystick.x = poolPoint.x;
-			joystick.y = poolPoint.y;
+			this.globalToLocal(joystickPosition, position);
+			joystick.x = position.x;
+			joystick.y = position.y;
 			joystick.scale = shootButton.scale = 1 / this.scale;
 			joystick.rotation = shootButton.rotation = -this.rotation;
-			poolPoint.copyFrom(joystickPosition);
+			position.copyFrom(joystickPosition);
 			var shootIconWidth:Number = shootButton.texture.width;
-			poolPoint.x += stage.stageWidth - joystickRadios * 2 - shootIconWidth / 2 - 30;
-			poolPoint.y -= shootIconWidth / 2 - 5;
-			this.globalToLocal(poolPoint, poolPoint);
-			shootButton.x = poolPoint.x;
-			shootButton.y = poolPoint.y;
-			Pool.putPoint(poolPoint);
+			position.x += stage.stageWidth - joystickRadios * 2 - shootIconWidth / 2 - 30;
+			position.y -= shootIconWidth / 2 - 5;
+			this.globalToLocal(position, position);
+			shootButton.x = position.x;
+			shootButton.y = position.y;
+			Pool.putPoint(position);
 		}
 		
 		private function handleKeyboardInput():void
 		{
-			if (Key.isDown(Keyboard.ENTER))
+			if (Key.isDown(fireKey) || Key.isDown(alternativeFireKey))
 			{
 				player.startShooting();
 			}
-			if (Key.isDown(Keyboard.W))
+			if (Key.isDown(upKey))
 			{
 				player.leftImpulse.y = player.rightImpulse.y = -player.maxAcceleration;
-				if (Key.isDown(Keyboard.A))
+				if (Key.isDown(leftKey))
 				{
 					player.leftImpulse.y -= player.maxAcceleration;
 					player.rightImpulse.y += player.maxTurningAcceleration / 3;
 				}
-				else if (Key.isDown(Keyboard.D))
+				else if (Key.isDown(rightKey))
 				{
 					player.leftImpulse.y += player.maxTurningAcceleration / 3;
 					player.rightImpulse.y -= player.maxAcceleration;
 				}
 			}
-			else if (Key.isDown(Keyboard.S))
+			else if (Key.isDown(downKey))
 			{
 				player.leftImpulse.y = player.rightImpulse.y = player.maxAcceleration;
-				if (Key.isDown(Keyboard.A))
+				if (Key.isDown(leftKey))
 				{
 					player.leftImpulse.y -= player.maxAcceleration;
 					player.rightImpulse.y += player.maxTurningAcceleration / 3;
 				}
-				else if (Key.isDown(Keyboard.D))
+				else if (Key.isDown(rightKey))
 				{
 					player.leftImpulse.y += player.maxTurningAcceleration / 3;
 					player.rightImpulse.y -= player.maxAcceleration;
 				}
 			}
-			else if (Key.isDown(Keyboard.A))
+			else if (Key.isDown(leftKey))
 			{
 				player.leftImpulse.y -= player.maxAcceleration;
 				player.rightImpulse.y += player.maxTurningAcceleration;
 			}
-			else if (Key.isDown(Keyboard.D))
+			else if (Key.isDown(rightKey))
 			{
 				player.leftImpulse.y += player.maxTurningAcceleration;
 				player.rightImpulse.y -= player.maxAcceleration;
@@ -309,19 +332,17 @@ package
 			{
 				xboxController = null;
 			}
-			if ((Math.abs(analogStick.x) + Math.abs(analogStick.y)) > 0)
+			var xAxis:Number;
+			var yAxis:Number;
+			var turningSpeed:Number;
+			xAxis = Math.min(1, analogStick.x / 160);
+			yAxis = Math.min(1, analogStick.y / 160);
+			if (Math.abs(xAxis) + Math.abs(yAxis) == 0 && xboxController)
 			{
-				var turningSpeed:Number = player.maxTurningAcceleration * Math.min(1, analogStick.x / 160);
-				player.leftImpulse.y = player.rightImpulse.y = player.maxAcceleration * Math.min(1, analogStick.y / 160);
-				player.leftImpulse.y += turningSpeed;
-				player.rightImpulse.y -= turningSpeed
-			}
-			else if (xboxController)
-			{
-				if (xboxController.leftStick.distance > 0.1)
+				if (Math.abs(xAxis) + Math.abs(yAxis) > 0.1)
 				{
-					player.leftImpulse.y = xboxController.leftStick.x * player.maxTurningAcceleration * 1.2 - player.maxAcceleration * xboxController.leftStick.y;
-					player.rightImpulse.y = -xboxController.leftStick.x * player.maxTurningAcceleration * 1.2 - player.maxAcceleration * xboxController.leftStick.y;
+					xAxis = xboxController.leftStick.x;
+					yAxis = -xboxController.leftStick.y;
 				}
 				if (xboxController.rt.held)
 				{
@@ -335,6 +356,17 @@ package
 			else if (ControllerInput.hasReadyController())
 			{
 				xboxController = ControllerInput.getReadyController() as Xbox360Controller;
+			}
+			if (Math.abs(xAxis) + Math.abs(yAxis) > 0)
+			{
+				if (xAxis != 0)
+				{
+					var easeOutAmount:Number = 0.9;
+					xAxis = xAxis / Math.abs(xAxis) * Math.pow(Math.abs(xAxis), easeOutAmount);
+				}
+				turningSpeed = player.maxTurningAcceleration * xAxis;
+				player.leftImpulse.y = player.maxAcceleration * yAxis + turningSpeed;
+				player.rightImpulse.y = player.maxAcceleration * yAxis - turningSpeed;
 			}
 		}
 	

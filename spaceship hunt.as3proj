@@ -8,11 +8,11 @@
     <movie fps="60" />
     <movie width="1500" />
     <movie height="980" />
-    <movie version="22" />
+    <movie version="25" />
     <movie minorVersion="0" />
     <movie platform="AIR" />
     <movie background="#000000" />
-    <movie preferredSDK="AIR 22.0.0;22.0.0;" />
+    <movie preferredSDK="AIR 25.0.0;25.0.0;" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
   <classpaths>
@@ -86,8 +86,8 @@
   <!-- Other project options -->
   <options>
     <option showHiddenPaths="True" />
-    <option testMovie="OpenDocument" />
-    <option testMovieCommand="bat/LaunchApp.bat" />
+    <option testMovie="Custom" />
+    <option testMovieCommand="bat\LaunchApp.bat" />
   </options>
   <!-- Plugin storage -->
   <storage>

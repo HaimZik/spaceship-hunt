@@ -15,9 +15,7 @@ package DDLS.ai
 		
 		private var _mesh:DDLSMesh;
 		
-		
 		private var __closedFaces:Dictionary;
-		private var __sortedOpenedFaces:Vector.<DDLSFace>;
 		private var __openedFaces:Dictionary;
 		private var __entryEdges:Dictionary;
 		private var __entryX:Dictionary;
@@ -34,17 +32,26 @@ package DDLS.ai
 		private var _diameter:Number;
 		private var _diameterSquared:Number;
 		
+		private var sortBuffer:Vector.<DDLSFace>;
+		
+		//helpers pool
+		private var __sortedOpenedFaces:Vector.<DDLSFace> = new Vector.<DDLSFace>();
+		private var vFaceToCheck:Vector.<DDLSFace> = new Vector.<DDLSFace>();
+		private var vFaceIsFromEdge:Vector.<DDLSEdge> = new Vector.<DDLSEdge>();
+		
 		public function DDLSAStar()
 		{
 			__iterEdge = new IteratorFromFaceToInnerEdges();
+			sortBuffer = new Vector.<DDLSFace>();
 		}
 		
 		public function dispose():void
 		{
 			_mesh = null;
 			
-			 __closedFaces = null;
+			__closedFaces = null;
 			__sortedOpenedFaces = null;
+			sortBuffer = null;
 			__openedFaces = null;
 			__entryEdges = null;
 			__entryX = null;
@@ -59,15 +66,15 @@ package DDLS.ai
 		{
 			return _radius;
 		}
-
+		
 		public function set radius(value:Number):void
 		{
 			_radius = value;
-			_radiusSquared = _radius*_radius;
-			_diameter = _radius*2;
-			_diameterSquared = _diameter*_diameter;
+			_radiusSquared = _radius * _radius;
+			_diameter = _radius * 2;
+			_diameterSquared = _diameter * _diameter;
 		}
-
+		
 		public function set mesh(value:DDLSMesh):void
 		{
 			_mesh = value;
@@ -76,13 +83,12 @@ package DDLS.ai
 		private var __fromFace:DDLSFace;
 		private var __toFace:DDLSFace;
 		private var __curFace:DDLSFace;
-		public function findPath(fromX:Number, fromY:Number, toX:Number, toY:Number
-								, resultListFaces:Vector.<DDLSFace>
-								, resultListEdges:Vector.<DDLSEdge>):void
+		
+		public function findPath(fromX:Number, fromY:Number, toX:Number, toY:Number, resultListFaces:Vector.<DDLSFace>, resultListEdges:Vector.<DDLSEdge>):void
 		{
 			//trace("findPath");
 			__closedFaces = new Dictionary();
-			__sortedOpenedFaces = new Vector.<DDLSFace>();
+			__sortedOpenedFaces.length = 0;
 			__openedFaces = new Dictionary();
 			__entryEdges = new Dictionary();
 			__entryX = new Dictionary();
@@ -107,7 +113,7 @@ package DDLS.ai
 				// vertex are always in constraint, so we abort
 				return;
 			}
-			else if ( (locEdge = loc as DDLSEdge) )
+			else if ((locEdge = loc as DDLSEdge))
 			{
 				// if the vertex lies on a constrained edge, we abort
 				if (locEdge.isConstrained)
@@ -123,23 +129,33 @@ package DDLS.ai
 			loc = DDLSGeom2D.locatePosition(toX, toY, _mesh);
 			locVertex = loc as DDLSVertex
 			if (locVertex)
-				__toFace = locVertex.edge.leftFace;
-			else if ( (locEdge = loc as DDLSEdge) )
+			{
+				if (locVertex.edge)
+				{
+					__toFace = locVertex.edge.leftFace;
+				}
+				else
+				{
+					trace("locVertex.edge was null");
+					return;
+				}
+			}
+			else if ((locEdge = loc as DDLSEdge))
 				__toFace = locEdge.leftFace;
 			else
 				__toFace = loc as DDLSFace;
 			
 			/*__fromFace.colorDebug = 0xFF0000;
-			__toFace.colorDebug = 0xFF0000;
-			trace( "from face:", __fromFace );
-			trace( "to face:", __toFace );*/
+			   __toFace.colorDebug = 0xFF0000;
+			   trace( "from face:", __fromFace );
+			   trace( "to face:", __toFace );*/
 			
 			__sortedOpenedFaces.push(__fromFace);
 			__entryEdges[__fromFace] = null;
 			__entryX[__fromFace] = fromX;
 			__entryY[__fromFace] = fromY;
 			__scoreG[__fromFace] = 0;
-			__scoreH[__fromFace] = Math.sqrt((toX - fromX)*(toX - fromX) + (toY - fromY)*(toY - fromY));
+			__scoreH[__fromFace] = Math.sqrt((toX - fromX) * (toX - fromX) + (toY - fromY) * (toY - fromY));
 			__scoreF[__fromFace] = __scoreH[__fromFace] + __scoreG[__fromFace];
 			
 			var innerEdge:DDLSEdge;
@@ -170,15 +186,15 @@ package DDLS.ai
 				
 				// we continue the search
 				__iterEdge.fromFace = __curFace;
-				while ((innerEdge = __iterEdge.next())!=null)
+				while ((innerEdge = __iterEdge.next()) != null)
 				{
 					if (innerEdge.isConstrained)
 						continue;
 					
 					neighbourFace = innerEdge.rightFace;
-					if (! __closedFaces[neighbourFace] )
+					if (!__closedFaces[neighbourFace])
 					{
-						if ( __curFace != __fromFace && _radius > 0 && ! isWalkableByRadius(__entryEdges[__curFace], __curFace, innerEdge))
+						if (__curFace != __fromFace && _radius > 0 && !isWalkableByRadius(__entryEdges[__curFace], __curFace, innerEdge))
 						{
 //							trace("- NOT WALKABLE -");
 //							trace( "from", DDLSEdge(__entryEdges[__curFace]).originVertex.id, DDLSEdge(__entryEdges[__curFace]).destinationVertex.id );
@@ -189,8 +205,8 @@ package DDLS.ai
 						
 						fromPoint.x = __entryX[__curFace];
 						fromPoint.y = __entryY[__curFace];
-						entryPoint.x = (innerEdge.originVertex.pos.x + innerEdge.destinationVertex.pos.x) /2;
-						entryPoint.y = (innerEdge.originVertex.pos.y + innerEdge.destinationVertex.pos.y) /2;
+						entryPoint.x = (innerEdge.originVertex.pos.x + innerEdge.destinationVertex.pos.x) / 2;
+						entryPoint.y = (innerEdge.originVertex.pos.y + innerEdge.destinationVertex.pos.y) / 2;
 						distancePoint.x = entryPoint.x - toX;
 						distancePoint.y = entryPoint.y - toY;
 						h = distancePoint.length;
@@ -199,13 +215,13 @@ package DDLS.ai
 						g = __scoreG[__curFace] + distancePoint.length;
 						f = h + g;
 						fillDatas = false;
-						if (! __openedFaces[neighbourFace]  )
+						if (!__openedFaces[neighbourFace])
 						{
 							__sortedOpenedFaces.push(neighbourFace);
 							__openedFaces[neighbourFace] = true;
 							fillDatas = true;
 						}
-						else if ( __scoreF[neighbourFace] > f )
+						else if (__scoreF[neighbourFace] > f)
 						{
 							fillDatas = true;
 						}
@@ -224,11 +240,12 @@ package DDLS.ai
 				//
 				__openedFaces[__curFace] = null;
 				__closedFaces[__curFace] = true;
-				__sortedOpenedFaces.sort(sortingFaces);
+				sortBuffer.length = __sortedOpenedFaces.length;
+				sortfaces(0, __sortedOpenedFaces.length);
 			}
 			
 			// if we didn't find a path
-			if (! __curFace)
+			if (!__curFace)
 				return;
 			
 			// else we build the path
@@ -256,6 +273,48 @@ package DDLS.ai
 				return -1;
 		}
 		
+		private function sortfaces(startIndex:int, length:int):void
+		{
+			// This is a port of the C++ merge sort algorithm shown here:
+			// http://www.cprogramming.com/tutorial/computersciencetheory/mergesort.html
+			
+			if (length > 1)
+			{
+				var i:int;
+				var endIndex:int = startIndex + length;
+				var halfLength:int = length / 2;
+				var l:int = startIndex; // current position in the left subvector
+				var r:int = startIndex + halfLength; // current position in the right subvector
+				
+				// sort each subvector
+				sortfaces(startIndex, halfLength);
+				sortfaces(startIndex + halfLength, length - halfLength);
+				
+				// merge the vectors, using the buffer vector for temporary storage
+				for (i = 0; i < length; i++)
+				{
+					// Check to see if any elements remain in the left vector; 
+					// if so, we check if there are any elements left in the right vector;
+					// if so, we compare them. Otherwise, we know that the merge must
+					// take the element from the left vector. */
+					if (l < startIndex + halfLength && (r == endIndex || sortingFaces(__sortedOpenedFaces[l], __sortedOpenedFaces[r]) <= 0))
+					{
+						sortBuffer[i] = __sortedOpenedFaces[l];
+						l++;
+					}
+					else
+					{
+						sortBuffer[i] = __sortedOpenedFaces[r];
+						r++;
+					}
+				}
+				
+				// copy the sorted subvector back to the input
+				for (i = startIndex; i < endIndex; i++)
+					__sortedOpenedFaces[i] = sortBuffer[int(i - startIndex)];
+			}
+		}
+		
 		private function isWalkableByRadius(fromEdge:DDLSEdge, throughFace:DDLSFace, toEdge:DDLSEdge):Boolean
 		{
 			var vA:DDLSVertex; // the vertex on fromEdge not on toEdge
@@ -263,7 +322,7 @@ package DDLS.ai
 			var vC:DDLSVertex; // the common vertex of the 2 edges (pivot)
 			
 			// we identify the points
-			if ( fromEdge.originVertex == toEdge.originVertex )
+			if (fromEdge.originVertex == toEdge.originVertex)
 			{
 				vA = fromEdge.destinationVertex;
 				vB = toEdge.destinationVertex;
@@ -293,11 +352,11 @@ package DDLS.ai
 			var distSquared:Number;
 			
 			// if we have a right or obtuse angle on CAB
-			dot = (vC.pos.x - vA.pos.x)*(vB.pos.x - vA.pos.x) + (vC.pos.y - vA.pos.y)*(vB.pos.y - vA.pos.y);
+			dot = (vC.pos.x - vA.pos.x) * (vB.pos.x - vA.pos.x) + (vC.pos.y - vA.pos.y) * (vB.pos.y - vA.pos.y);
 			if (dot <= 0)
 			{
 				// we compare length of AC with radius
-				distSquared = (vC.pos.x - vA.pos.x)*(vC.pos.x - vA.pos.x) + (vC.pos.y - vA.pos.y)*(vC.pos.y - vA.pos.y);
+				distSquared = (vC.pos.x - vA.pos.x) * (vC.pos.x - vA.pos.x) + (vC.pos.y - vA.pos.y) * (vC.pos.y - vA.pos.y);
 				if (distSquared >= _diameterSquared)
 					return true;
 				else
@@ -305,11 +364,11 @@ package DDLS.ai
 			}
 			
 			// if we have a right or obtuse angle on CBA
-			dot = (vC.pos.x - vB.pos.x)*(vA.pos.x - vB.pos.x) + (vC.pos.y - vB.pos.y)*(vA.pos.y - vB.pos.y);
+			dot = (vC.pos.x - vB.pos.x) * (vA.pos.x - vB.pos.x) + (vC.pos.y - vB.pos.y) * (vA.pos.y - vB.pos.y);
 			if (dot <= 0)
 			{
 				// we compare length of BC with radius
-				distSquared = (vC.pos.x - vB.pos.x)*(vC.pos.x - vB.pos.x) + (vC.pos.y - vB.pos.y)*(vC.pos.y - vB.pos.y);
+				distSquared = (vC.pos.x - vB.pos.x) * (vC.pos.x - vB.pos.x) + (vC.pos.y - vB.pos.y) * (vC.pos.y - vB.pos.y);
 				if (distSquared >= _diameterSquared)
 					return true;
 				else
@@ -318,11 +377,9 @@ package DDLS.ai
 			
 			// we identify the adjacent edge (facing pivot vertex)
 			var adjEdge:DDLSEdge;
-			if (throughFace.edge != fromEdge && throughFace.edge.oppositeEdge != fromEdge
-				&& throughFace.edge != toEdge && throughFace.edge.oppositeEdge != toEdge)
+			if (throughFace.edge != fromEdge && throughFace.edge.oppositeEdge != fromEdge && throughFace.edge != toEdge && throughFace.edge.oppositeEdge != toEdge)
 				adjEdge = throughFace.edge;
-			else if (throughFace.edge.nextLeftEdge != fromEdge && throughFace.edge.nextLeftEdge.oppositeEdge != fromEdge
-					&& throughFace.edge.nextLeftEdge != toEdge && throughFace.edge.nextLeftEdge.oppositeEdge != toEdge)
+			else if (throughFace.edge.nextLeftEdge != fromEdge && throughFace.edge.nextLeftEdge.oppositeEdge != fromEdge && throughFace.edge.nextLeftEdge != toEdge && throughFace.edge.nextLeftEdge.oppositeEdge != toEdge)
 				adjEdge = throughFace.edge.nextLeftEdge;
 			else
 				adjEdge = throughFace.edge.prevLeftEdge;
@@ -332,7 +389,7 @@ package DDLS.ai
 			{
 				var proj:DDLSPoint2D = new DDLSPoint2D(vC.pos.x, vC.pos.y);
 				DDLSGeom2D.projectOrthogonaly(proj, adjEdge);
-				distSquared = (proj.x - vC.pos.x)*(proj.x - vC.pos.x) + (proj.y - vC.pos.y)*(proj.y - vC.pos.y);
+				distSquared = (proj.x - vC.pos.x) * (proj.x - vC.pos.x) + (proj.y - vC.pos.y) * (proj.y - vC.pos.y);
 				if (distSquared >= _diameterSquared)
 					return true;
 				else
@@ -340,16 +397,16 @@ package DDLS.ai
 			}
 			else // if the adjacent is not constrained
 			{
-				var distSquaredA:Number = (vC.pos.x - vA.pos.x)*(vC.pos.x - vA.pos.x) + (vC.pos.y - vA.pos.y)*(vC.pos.y - vA.pos.y);
-				var distSquaredB:Number = (vC.pos.x - vB.pos.x)*(vC.pos.x - vB.pos.x) + (vC.pos.y - vB.pos.y)*(vC.pos.y - vB.pos.y);
+				var distSquaredA:Number = (vC.pos.x - vA.pos.x) * (vC.pos.x - vA.pos.x) + (vC.pos.y - vA.pos.y) * (vC.pos.y - vA.pos.y);
+				var distSquaredB:Number = (vC.pos.x - vB.pos.x) * (vC.pos.x - vB.pos.x) + (vC.pos.y - vB.pos.y) * (vC.pos.y - vB.pos.y);
 				if (distSquaredA < _diameterSquared || distSquaredB < _diameterSquared)
 				{
 					return false;
 				}
 				else
 				{
-					var vFaceToCheck:Vector.<DDLSFace> = new Vector.<DDLSFace>();
-					var vFaceIsFromEdge:Vector.<DDLSEdge> = new Vector.<DDLSEdge>();
+					vFaceToCheck.length = 0;
+					vFaceIsFromEdge.length = 0;
 					var facesDone:Dictionary = new Dictionary();
 					vFaceIsFromEdge.push(adjEdge);
 					if (adjEdge.leftFace == throughFace)
@@ -400,13 +457,13 @@ package DDLS.ai
 							nextFaceB = currEdgeB.rightFace;
 						else
 							nextFaceB = currEdgeB.leftFace;
-							
+						
 						// we check if the next face is not already in pipe
 						// and if the edge A is close to pivot vertex
-						if ( ! facesDone[nextFaceA] && DDLSGeom2D.distanceSquaredVertexToEdge(vC, currEdgeA) < _diameterSquared )
+						if (!facesDone[nextFaceA] && DDLSGeom2D.distanceSquaredVertexToEdge(vC, currEdgeA) < _diameterSquared)
 						{
 							// if the edge is constrained
-							if ( currEdgeA.isConstrained )
+							if (currEdgeA.isConstrained)
 							{
 								// so it is not walkable
 								return false;
@@ -422,10 +479,10 @@ package DDLS.ai
 						
 						// we check if the next face is not already in pipe
 						// and if the edge B is close to pivot vertex
-						if ( ! facesDone[nextFaceB] && DDLSGeom2D.distanceSquaredVertexToEdge(vC, currEdgeB) < _diameterSquared )
+						if (!facesDone[nextFaceB] && DDLSGeom2D.distanceSquaredVertexToEdge(vC, currEdgeB) < _diameterSquared)
 						{
 							// if the edge is constrained
-							if ( currEdgeB.isConstrained )
+							if (currEdgeB.isConstrained)
 							{
 								// so it is not walkable
 								return false;
@@ -447,7 +504,6 @@ package DDLS.ai
 			
 			return true;
 		}
-		
-		
+	
 	}
 }

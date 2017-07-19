@@ -4,6 +4,7 @@ package
 	import flash.display.StageAlign;
 	import flash.display.StageScaleMode;
 	import flash.events.Event;
+	import input.Key;
 	import starling.core.Starling;
 	
 	/**
@@ -31,10 +32,15 @@ package
 			gameEngine = new Starling(Game, stage, null, null, "auto", "baselineExtended");
 			gameEngine.antiAliasing = 4;
 			gameEngine.showStats = true;
+			gameEngine.start();
 			stage.addEventListener(Event.ACTIVATE, function(e:Event):void
 			{
 				trace("ACTIVATE");
 				gameEngine.start();
+				if (gameEngine.root)
+				{
+				(gameEngine.root as Game).onFocusReturn();
+				}
 			});
 			stage.addEventListener(Event.DEACTIVATE, function(e:Event):void
 			{

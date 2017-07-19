@@ -1,13 +1,12 @@
 package spaceshiptHunt.entities
 {
-	import spaceshiptHunt.level.Environment;
-	import nape.callbacks.CbType;
-	import nape.geom.Vec2;
-	import nape.shape.Circle;
-	import starling.core.Starling;
-	import starling.display.DisplayObject;
-	import starling.display.MovieClip;
-	import starling.textures.Texture;
+	import nape.callbacks.*;
+	import nape.geom.*;
+	import nape.shape.*;
+	import spaceshiptHunt.level.*;
+	import starling.core.*;
+	import starling.display.*;
+	import starling.textures.*;
 	
 	/**
 	 * ...
@@ -16,7 +15,7 @@ package spaceshiptHunt.entities
 	public class PhysicsParticle extends BodyInfo
 	{
 		
-		internal static var ParticlePool:Vector.<PhysicsParticle> = new Vector.<PhysicsParticle>();
+		internal static var particlePool:Vector.<PhysicsParticle> = new Vector.<PhysicsParticle>();
 		protected static const poolGrowth:int = 10;
 		protected var currentCallId:uint;
 		public static const INTERACTION_TYPE:CbType= new CbType(); 
@@ -46,18 +45,18 @@ package spaceshiptHunt.entities
 		public static function spawn(particleType:String, position:Vec2, impulse:Vec2):void
 		{
 			var particleTexture:Vector.<Texture> = Environment.current.assetsLoader.getTextures(particleType)
-			if (ParticlePool.length == 0)
+			if (particlePool.length == 0)
 			{
 				var circleShape:Circle = new Circle(particleTexture[0].width/2);
 				for (var i:int = 0; i < poolGrowth; i++)
 				{
-					ParticlePool.push(new PhysicsParticle(particleTexture));
+					particlePool.push(new PhysicsParticle(particleTexture));
 					circleShape.filter.collisionMask = ~2;//in order for the raytracing to ignore it
-					ParticlePool[i].body.shapes.add(circleShape.copy());
-					ParticlePool[i].body.mass /= 3;
+					particlePool[i].body.shapes.add(circleShape.copy());
+					particlePool[i].body.mass /= 3;
 				}
 			}
-			var particle:PhysicsParticle=ParticlePool.pop();
+			var particle:PhysicsParticle=particlePool.pop();
 			particle.body.position.set(position);
 			particle.body.applyImpulse(impulse);
 			particle.body.rotation = impulse.angle;
@@ -78,7 +77,7 @@ package spaceshiptHunt.entities
 			graphics.removeFromParent();
 			body.space = null;
 			BodyInfo.list.removeAt(BodyInfo.list.indexOf(this));
-			ParticlePool.push(this);
+			particlePool.push(this);
 			}
 		}
 	

@@ -1,1 +1,1 @@
-{"levelSpecific/Level1/static/asteroidField":{},"player":{"cordsX":[3551],"cordsY":[4519]},"batship":{"cordsX":[2951],"cordsY":[4351]},"batshipMiniBlur":{"cordsX":[2791,4000,6000,2100,3000,3500,1000,5000,2000,3000,2800,2000],"cordsY":[4201,4204,4204,4204,4204,2204,4204,4204,2204,1204,1204,5204]}}
+{"levelSpecific/Level1/static/asteroidField":{},"player":{"cordsX":[3551],"cordsY":[4519]},"batship":{"cordsX":[2951],"cordsY":[4351]},"batshipMiniBlur":{"cordsX":[2791,4000],"cordsY":[4204,4204]}}

@@ -17,6 +17,8 @@ package spaceshiptHunt.entities
 	public class Entity extends BodyInfo
 	{
 		protected var _pathfindingAgent:DDLSEntityAI;
+		static protected var pathfindingAgentSafeDistance:Number = 30;
+		protected var pathUpdateInterval:int = 48;
 		
 		public function Entity(position:Vec2)
 		{
@@ -44,9 +46,10 @@ package spaceshiptHunt.entities
 				child.pivotY = child.height / 2;
 				(graphics as DisplayObjectContainer).addChild(child);
 			}
-			pathfindingAgent.radius = 30 + Math.sqrt(body.bounds.width * body.bounds.width + body.bounds.height * body.bounds.height) / 2;
+			pathfindingAgent.radius = pathfindingAgentSafeDistance + Math.sqrt(body.bounds.width * body.bounds.width + body.bounds.height * body.bounds.height) / 2;
 			pathfindingAgent.buildApproximation();
-			pathfindingAgent.radius -= 30;
+			pathfindingAgent.radius -= pathfindingAgentSafeDistance;
+			Environment.current.navMesh.insertObject(pathfindingAgent.approximateObject);
 		}
 		
 		override protected function updateGraphics():void
@@ -54,6 +57,10 @@ package spaceshiptHunt.entities
 			super.updateGraphics();
 			pathfindingAgent.x = body.position.x;
 			pathfindingAgent.y = body.position.y;
+			var dirNorm:Vec2 = Vec2.fromPolar(1, body.rotation - Math.PI / 2);
+			pathfindingAgent.dirNormX = dirNorm.x;
+			pathfindingAgent.dirNormY = dirNorm.y;
+			dirNorm.dispose();
 			pathfindingAgent.approximateObject.x = body.position.x + body.velocity.x / 2;
 			pathfindingAgent.approximateObject.y = body.position.y + body.velocity.y / 2;
 		}
@@ -61,6 +68,15 @@ package spaceshiptHunt.entities
 		public function get pathfindingAgent():DDLSEntityAI
 		{
 			return _pathfindingAgent;
+		}
+		
+		CONFIG::debug
+		{
+			import DDLS.view.DDLSSimpleView;		
+			public function drawDebug(canvas:DDLSSimpleView):void
+			{
+				canvas.drawEntity(pathfindingAgent, false);
+			}
 		}
 	}
 

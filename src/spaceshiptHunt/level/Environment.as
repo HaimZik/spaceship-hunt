@@ -5,10 +5,14 @@ package spaceshiptHunt.level
 	 * @author Haim Shnitzer
 	 */
 	
+	import DDLS.ai.DDLSEntityAI;
 	import DDLS.ai.DDLSPathFinder;
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSObject;
 	import DDLS.factories.DDLSRectMeshFactory;
+	import nape.geom.GeomPoly;
+	import nape.geom.Ray;
+	import nape.geom.RayResult;
 	import spaceshiptHunt.entities.*;
 	import flash.geom.Point;
 	import flash.system.Capabilities;
@@ -45,19 +49,22 @@ package spaceshiptHunt.level
 		public var assetsLoader:AssetManager;
 		public var navMesh:DDLSMesh;
 		public var physicsSpace:Space;
-		public var pathfinder:DDLSPathFinder;
+		
 		public var light:LightSource;
 		public var currentLevel:String;
+		static private var currentEnvironment:Environment;
+		protected var pathfinder:DDLSPathFinder;
 		protected var lastNavMeshUpdate:Number;
 		protected var commandQueue:Vector.<Function>;
 		protected var navBody:DDLSObject;
 		protected var particleSystem:PDParticleSystem;
 		
+		private var rayHelper:Ray;
+		
 		[Embed(source = "JetFire.pex", mimeType = "application/octet-stream")]
 		protected static const JetFireConfig:Class;
 		
 		protected var asteroidField:Sprite;
-		static private var currentEnvironment:Environment;
 		
 		public function Environment(mainSprite:Sprite)
 		{
@@ -66,7 +73,6 @@ package spaceshiptHunt.level
 			physicsSpace = new Space(new Vec2(0, 0));
 			physicsSpace.worldAngularDrag = 3.0;
 			physicsSpace.worldLinearDrag = 2;
-			
 			assetsLoader = new AssetManager();
 			if (SystemUtil.isDesktop)
 			{
@@ -78,6 +84,7 @@ package spaceshiptHunt.level
 			navMesh.insertObject(navBody);
 			pathfinder = new DDLSPathFinder();
 			pathfinder.mesh = navMesh;
+			pathfinder.physicsHitTestLine = hitTestLine;
 			var bulletCollisionListener:InteractionListener = new InteractionListener(CbEvent.BEGIN, InteractionType.COLLISION, CbType.ANY_BODY, PhysicsParticle.INTERACTION_TYPE, onBulletHit);
 			physicsSpace.listeners.add(bulletCollisionListener);
 			light = new LightSource();
@@ -101,7 +108,7 @@ package spaceshiptHunt.level
 		{
 			light.x = Player.current.graphics.x;
 			light.y = Player.current.graphics.y + 400;
-			if (passedTime > 0) //some strange bug or maybe I optimize faster then the speed of light
+			if (passedTime > 0) //some strange bug or maybe I optimize faster than the speed of light
 			{
 				physicsSpace.step(passedTime);
 			}
@@ -155,25 +162,15 @@ package spaceshiptHunt.level
 			}
 			commandQueue.push(function onFinish():void
 			{
-				var bodyDescription:Object = assetsLoader.getObject(infoFileName);
-				var polygonArray:Array = assetsLoader.getObject(meshFileName) as Array;
 				if (fileName.indexOf("static") != -1)
 				{
-					var texture:Texture = assetsLoader.getTexture(bodyDescription.textureName);
-					var normalMap:Texture = assetsLoader.getTexture(bodyDescription.textureName + "_n");
-					var body:Body = new Body(BodyType.STATIC);
-					asteroidField = new Sprite();
-					for (var k:int = 0; k < polygonArray.length; k++)
-					{
-						addMesh(polygonArray[k], body);
-						drawMesh(asteroidField, new starling.geom.Polygon(polygonArray[k]), texture, normalMap);
-					}
-					mainDisplay.addChild(asteroidField);
-					physicsSpace.bodies.add(body);
+					createStaticMesh(infoFileName, meshFileName);
 				}
 				else
 				{
+					var bodyDescription:Object = assetsLoader.getObject(infoFileName);
 					var EntityType:Class = LevelInfo.entityTypes["spaceshiptHunt.entities::" + bodyDescription.type];
+					var polygonArray:Array = assetsLoader.getObject(meshFileName) as Array;
 					for (var i:int = 0; i < fileInfo.cordsX.length; i++)
 					{
 						var bodyInfo:Entity
@@ -283,7 +280,6 @@ package spaceshiptHunt.level
 		
 		protected function addFireParticle(bodyInfo:Spaceship):void
 		{
-		
 			//if (!particleSystem)
 			//{
 			particleSystem = new PDParticleSystem(XML(new JetFireConfig()), assetsLoader.getTexture("fireball_0"));
@@ -305,6 +301,29 @@ package spaceshiptHunt.level
 			//particleSystem.customFunction = bodyInfo.jetParticlePositioning;
 		}
 		
+		protected function createStaticMesh(infoFileName:String, meshFileName:String):void
+		{
+			var bodyDescription:Object = assetsLoader.getObject(infoFileName);
+			var texture:Texture = assetsLoader.getTexture(bodyDescription.textureName);
+			var normalMap:Texture = assetsLoader.getTexture(bodyDescription.textureName + "_n");
+			var body:Body = new Body(BodyType.STATIC);
+			asteroidField = new Sprite();
+			var polygonArray:Array = assetsLoader.getObject(meshFileName) as Array;
+			for (var k:int = 0; k < polygonArray.length; k++)
+			{
+				addMesh(polygonArray[k], body);
+				drawMesh(asteroidField, new starling.geom.Polygon(polygonArray[k]), texture, normalMap);
+			}
+			mainDisplay.addChild(asteroidField);
+			physicsSpace.bodies.add(body);
+		}
+		
+		public function findPath(pathfindingAgent:DDLSEntityAI, x:Number, y:Number, outPath:Vector.<Number>):void
+		{
+			pathfinder.entity = pathfindingAgent;
+			pathfinder.findPath(x, y, outPath);
+		}
+		
 		private function onBulletHit(event:InteractionCallback):void
 		{
 			if (event.int1.userData.info is PhysicsParticle)
@@ -315,6 +334,19 @@ package spaceshiptHunt.level
 			{
 				(event.int2.userData.info as PhysicsParticle).despawn();
 			}
+		}
+		
+		protected function hitTestLine(fromEntity:DDLSEntityAI, directionX:Number, directionY:Number, maxDistance:Number):Boolean
+		{
+			rayHelper.origin.x = fromEntity.x;
+			rayHelper.origin.y = fromEntity.y;
+			rayHelper.direction.x = directionX;
+			rayHelper.direction.y = directionY;
+			rayHelper.maxDistance = maxDistance;
+			var rayResult:RayResult = physicsSpace.rayCast(rayHelper, false);
+			var hitTestResult:Boolean = rayResult.distance < maxDistance;
+			rayResult.dispose();
+			return hitTestResult;
 		}
 	
 	}
