@@ -9,10 +9,18 @@ package spaceshiptHunt.entities
 	 */
 	public class EnemyPathBlocker extends Enemy
 	{
+		protected var attackRange:Number = 300.0;
 		
 		public function EnemyPathBlocker(position:Vec2)
 		{
 			super(position);
+			weaponsPlacement["fireCannon"] = Vec2.get(16, -37);
+		}
+		
+		override public function init(bodyDescription:Object):void
+		{
+			super.init(bodyDescription);
+			this.gunType = "fireCannon";
 		}
 		
 		override protected function decideNextAction():void
@@ -24,21 +32,47 @@ package spaceshiptHunt.entities
 			}
 		}
 		
+		protected function attackPlayer():void
+		{
+			if (canViewPlayer && Vec2.dsq(Player.current.body.position, body.position) < attackRange * attackRange)
+			{
+				startShooting();
+			}
+			else
+			{
+				stopShooting();
+				currentAction = decideNextAction;
+			}
+		
+		}
+		
+		protected function aimToPlayer():void
+		{
+			currentAction = attackPlayer;
+		}
+		
 		protected function goToPlayerPath():void
 		{
-			var playerPredictedPath:Vector.<Number> = PreyEnemy.current.playerPredictedPath;
-			if (playerPredictedPath.length > 0)
+			if (canViewPlayer && Vec2.dsq(Player.current.body.position, body.position) < attackRange * attackRange)
 			{
-				var closestPoint:Vec2 = closestPointFromPath(playerPredictedPath);
-				if (!(closestPoint.x == 0 && closestPoint.y == 0))
+				currentAction = aimToPlayer;
+			}
+			else
+			{
+				var playerPredictedPath:Vector.<Number> = PreyEnemy.current.playerPredictedPath;
+				if (playerPredictedPath.length > 0)
 				{
-					goTo(closestPoint.x, closestPoint.y);
+					var closestPoint:Vec2 = closestPointFromPath(playerPredictedPath);
+					if (!(closestPoint.x == 0 && closestPoint.y == 0))
+					{
+						goTo(closestPoint.x, closestPoint.y);
+					}
+					else
+					{
+						currentAction = decideNextAction;
+					}
+					closestPoint.dispose();
 				}
-				else
-				{
-					currentAction = null;
-				}
-				closestPoint.dispose();
 			}
 		}
 		
@@ -95,7 +129,7 @@ package spaceshiptHunt.entities
 		
 		protected function distanceSquaredFromPlayer(pos:Vec2):Number
 		{
-			if (Enemy.enemiesSeePlayerCounter>0)
+			if (Enemy.enemiesSeePlayerCounter > 0)
 			{
 				return Vec2.dsq(Player.current.body.position, pos);
 			}

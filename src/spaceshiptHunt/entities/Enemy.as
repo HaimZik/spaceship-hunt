@@ -38,6 +38,13 @@ package spaceshiptHunt.entities
 			path = new <Number>[];
 			rayList = new RayResultList();
 			lastSeenPlayerPos = Vec2.get();
+			currentAction = decideNextAction;
+			//var a:InteractionFilter = new InteractionFilter(2, -1);
+			//var b:InteractionFilter = new InteractionFilter(2, -1);
+			//while (true)
+			//{
+			//trace(a.shouldCollide(b));
+			//}
 		}
 		
 		override public function update():void
@@ -47,14 +54,7 @@ package spaceshiptHunt.entities
 			{
 				checkPlayerVisible();
 			}
-			if (currentAction)
-			{
-				currentAction();
-			}
-			else
-			{
-				decideNextAction();
-			}
+			currentAction();
 		}
 		
 		public function isPathBlocked():Boolean
@@ -90,7 +90,7 @@ package spaceshiptHunt.entities
 				if (isPathBlocked())
 				{
 					nextPoint = -1;
-					currentAction = null;
+					currentAction = decideNextAction;
 					if (body.space.timeStamp - pathCheckTime > pathUpdateInterval)
 					{
 						Environment.current.meshNeedsUpdate = true;
@@ -109,7 +109,7 @@ package spaceshiptHunt.entities
 			else
 			{
 				nextPoint = -1;
-				currentAction = null;
+				currentAction = decideNextAction;
 			}
 		}
 		
@@ -119,6 +119,7 @@ package spaceshiptHunt.entities
 			for (var i:int = 0; i < body.shapes.length; i++)
 			{
 				body.shapes.at(i).filter.collisionMask = ~2;
+				body.shapes.at(i).filter.collisionGroup = 8;
 			}
 			rayPool = Ray.fromSegment(this.body.position, Player.current.body.position);
 			pointingArrow = new Image(Environment.current.assetsLoader.getTexture("arrow"));
@@ -188,7 +189,7 @@ package spaceshiptHunt.entities
 				var distance:Number = Vec2.distance(body.position, Player.current.body.position);
 				if (distance < pathfindingAgent.radius + pathfindingAgent.radius + 20)
 				{
-					body.applyImpulse(body.position.sub(Player.current.body.position, true).muleq(22000 / (distance * distance)).rotate(Math.PI / 4));
+						body.applyImpulse(body.position.sub(Player.current.body.position, true).muleq(22000 / (distance * distance)).rotate(Math.PI / 4));
 				}
 				var nextPointPos:Vec2 = Vec2.get(path[nextPoint * 2], path[nextPoint * 2 + 1]);
 				while (Vec2.distance(body.position, nextPointPos) < 40 && ++nextPoint < path.length / 2)
@@ -245,7 +246,7 @@ package spaceshiptHunt.entities
 			}
 			if (nextPoint == -1)
 			{
-				currentAction = null;
+				currentAction = decideNextAction;
 			}
 		}
 		

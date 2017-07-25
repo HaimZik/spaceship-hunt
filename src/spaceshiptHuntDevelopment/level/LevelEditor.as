@@ -208,7 +208,7 @@ package spaceshiptHuntDevelopment.level
 				}
 			}
 			levelData["levelSpecific/" + currentLevel + "/static/asteroidField"] = new Object();
-			saveFile(File.applicationDirectory.resolvePath("").nativePath+"/../src/spaceshiptHunt/level/"+currentLevel + ".json",JSON.stringify(levelData),"");
+			saveFile(File.applicationDirectory.resolvePath("").nativePath + "/../src/spaceshiptHunt/level/" + currentLevel + ".json", JSON.stringify(levelData), "");
 		}
 		
 		CONFIG::air public function saveAsteroidField(bodyInfo:Object):void

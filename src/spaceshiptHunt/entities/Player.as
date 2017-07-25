@@ -33,6 +33,7 @@ package spaceshiptHunt.entities
 			for (var i:int = 0; i < body.shapes.length; i++)
 			{
 				body.shapes.at(i).filter.collisionMask = ~4;
+				body.shapes.at(i).filter.collisionGroup = 8;
 			}
 			this.gunType = "fireCannon";
 			//Environment.current.navMesh.insertObject(pathfindingAgent.approximateObject);

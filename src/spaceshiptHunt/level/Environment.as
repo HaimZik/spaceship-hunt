@@ -9,7 +9,9 @@ package spaceshiptHunt.level
 	import DDLS.ai.DDLSPathFinder;
 	import DDLS.data.DDLSMesh;
 	import DDLS.data.DDLSObject;
+	import DDLS.data.HitTestable;
 	import DDLS.factories.DDLSRectMeshFactory;
+	import nape.dynamics.InteractionFilter;
 	import nape.geom.GeomPoly;
 	import nape.geom.Ray;
 	import nape.geom.RayResult;
@@ -42,7 +44,7 @@ package spaceshiptHunt.level
 	import starling.utils.Pool;
 	import starling.utils.SystemUtil;
 	
-	public class Environment
+	public class Environment implements HitTestable
 	{
 		public var mainDisplay:Sprite;
 		public var meshNeedsUpdate:Boolean = true;
@@ -58,7 +60,7 @@ package spaceshiptHunt.level
 		protected var commandQueue:Vector.<Function>;
 		protected var navBody:DDLSObject;
 		protected var particleSystem:PDParticleSystem;
-		
+		protected static const STATIC_OBSTACLES_FILTER:InteractionFilter = new InteractionFilter(2, ~8);
 		private var rayHelper:Ray;
 		
 		[Embed(source = "JetFire.pex", mimeType = "application/octet-stream")]
@@ -82,9 +84,8 @@ package spaceshiptHunt.level
 			navMesh = DDLSRectMeshFactory.buildRectangle(10000, 10000);
 			navBody = new DDLSObject();
 			navMesh.insertObject(navBody);
-			pathfinder = new DDLSPathFinder();
+			pathfinder = new DDLSPathFinder(this);
 			pathfinder.mesh = navMesh;
-			pathfinder.physicsHitTestLine = hitTestLine;
 			var bulletCollisionListener:InteractionListener = new InteractionListener(CbEvent.BEGIN, InteractionType.COLLISION, CbType.ANY_BODY, PhysicsParticle.INTERACTION_TYPE, onBulletHit);
 			physicsSpace.listeners.add(bulletCollisionListener);
 			light = new LightSource();
@@ -97,6 +98,7 @@ package spaceshiptHunt.level
 			light.ambientBrightness = 0.1;
 			//light.showLightBulb = true;
 			lastNavMeshUpdate = Starling.juggler.elapsedTime;
+			rayHelper = Ray.fromSegment(Vec2.get(), Vec2.get());
 		}
 		
 		public static function get current():Environment
@@ -336,16 +338,20 @@ package spaceshiptHunt.level
 			}
 		}
 		
-		protected function hitTestLine(fromEntity:DDLSEntityAI, directionX:Number, directionY:Number, maxDistance:Number):void
+		public function hitTestLine(fromEntity:DDLSEntityAI, directionX:Number, directionY:Number):Boolean
 		{
 			rayHelper.origin.x = fromEntity.x;
 			rayHelper.origin.y = fromEntity.y;
 			rayHelper.direction.x = directionX;
 			rayHelper.direction.y = directionY;
-			rayHelper.maxDistance = maxDistance;
-			var rayResult:RayResult = physicsSpace.rayCast(rayHelper, false);
-			//	canViewPlayer = rayResult.shape.body == Player.current.body;
-			rayResult.dispose();
+			rayHelper.maxDistance = rayHelper.direction.length;
+			var rayResult:RayResult = physicsSpace.rayCast(rayHelper, false, STATIC_OBSTACLES_FILTER);
+			if (rayResult)
+			{
+				rayResult.dispose();
+				return true;
+			}
+			return false;
 		}
 	
 	}
